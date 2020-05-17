@@ -1,3 +1,6 @@
+#Ignoring CSVs and Database files which store trading data  
+*.csv
+*.db
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
