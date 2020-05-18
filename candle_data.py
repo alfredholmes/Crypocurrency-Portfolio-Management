@@ -1,5 +1,11 @@
-import sqlite3
 
+"""
+Class to handle loading data from the sqlite3 database once ./get_trading_data.py has been run to aquire the candlestick data
+
+Author: Alfred Holmes, https://github.com/alfredholmes
+"""
+
+import sqlite3
 
 class Candles:
 	def __init__(self, database='data/candles.db'):
@@ -14,10 +20,5 @@ class Candles:
 			candle = {title: d for title, d in zip(headers, line)}
 			candles.append(candle)
 		return candles
-def main():
-	database = Candles()
-	print(database.get_candles())
 
 
-if __name__ == '__main__':
-	main()

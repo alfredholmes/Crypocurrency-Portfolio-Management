@@ -20,7 +20,7 @@ INTERVALS = {
 			 '5m': 5 * 60 * 60 * 1000, 
 			 '15m': 15 * 60 * 60 * 1000, 
 			 '30m': 30 * 60 * 60 * 1000, 
-			 '1h':  60 * 60 * 60 * 1000, 
+			 '1h':  60 * 60 * 1000, 
 			 
 			 '2h': 2 * 60 * 60 * 60 * 1000, 
 			 '4h': 4 * 60 * 60 * 60 * 1000, 
@@ -49,7 +49,7 @@ def main():
 
 	start_ms = int(START_DATE.timestamp() * 1000)
 	#end_ms = int(END_DATE.timestamp() * 1000)
-	end_ms = start_ms + 5 * INTERVALS[INTERVAL]
+	end_ms = start_ms + 5 * INTERVALS[INTERVAL] * 1000
 
 	current_ms = start_ms
 
@@ -57,13 +57,14 @@ def main():
 	while  current_ms < end_ms:
 		print((end_ms - current_ms) / INTERVALS[INTERVAL])
 		interval = []
+		
 		for market in MARKETS:
 
 			params = {
 				'symbol': market,
 				'interval': INTERVAL,
-				'startTime': start_ms,
-				'endTime': start_ms + LIMIT * INTERVALS[INTERVAL],
+				'startTime': current_ms,
+				'endTime': current_ms + LIMIT * INTERVALS[INTERVAL],
 				'limit': 1000
 			}
 			r = requests.get('https://api.binance.com/api/v3/klines', params=params)
@@ -83,7 +84,7 @@ def main():
 						print(interval[i][0] - addition[0])
 						print('OUT OF SYNC')
 
-		current_ms += INTERVALS[INTERVAL]
+		current_ms += 1000 * INTERVALS[INTERVAL]
 		
 		candle_data += interval
 
@@ -99,7 +100,6 @@ def main():
 			columns += ', ' + market + '_OPEN'
 			columns += ', ' + market + '_CLOSE'
 
-		print(columns, data)
 		c.execute('INSERT INTO CANDLES (' + columns + ') VALUES (' + data +')')
 
 
