@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 
 class PAMR:
 	#Parameters epsilon and c are as in the paper
-	def __init__(self, initial_portfolio, epsilon=0.5, c=500):
+	def __init__(self, initial_portfolio, epsilon=0.5, c=8000):
 		
 		self.portfolio = np.array(initial_portfolio)
 		self.epsilon = epsilon
@@ -29,10 +29,8 @@ class PAMR:
 		price_changes = np.array(price_changes)
 		x_bar = np.mean(price_changes)
 		distance = np.sum((x_bar * np.ones(price_changes.size) - price_changes) ** 2)
-		if distance > 0: 
-			tau = self.loss(price_changes) / distance
-		else:
-			tau = 0
+		tau = self.loss(price_changes) / (distance + 1 / 2*self.c)
+
 		new_weights = self.portfolio - tau * (price_changes - x_bar * np.ones(price_changes.size))
 		new_weights = self.normalise(new_weights)
 
@@ -50,14 +48,18 @@ class PAMR:
 		
 
 		for price_changes in price_change_list:
+			previous_portfolio = np.array(self.portfolio)
 
-			value *= np.sum(self.portfolio * np.array(price_changes)) * (1 - 0.0004)
+
+			value *= np.sum(self.portfolio * np.array(price_changes))
+			self.new_weights_PAMR(price_changes)
+			traded_volume = np.sum(np.abs(self.portfolio - previous_portfolio)) / 2
+			value -= 2* value * traded_volume * (1 - 0.001)
 			#print(self.portfolio, price_changes, (self.portfolio * np.array(price_changes)))
 			values.append(value)
 
 
 
-			self.new_weights_PAMR(price_changes)
 
 		
 			portfolios.append(np.array(self.portfolio))
@@ -68,14 +70,14 @@ class PAMR:
 def main():
 	currencies = ['USDT', 'BTC', 'ETH', 'EOS', 'LTC'] #USDT is assumed to have a constant price of 1, everything else trades against BTC
 
-	data = candle_data.Candles('data/candles_1h.db')
+	data = candle_data.Candles('data/candles_30m.db')
 	candles = data.get_candles()
 
 	price_changes = []
 	previous_candle = None
 
 
-	btc_price = []
+	prices = []
 
 	for candle in candles:
 		if previous_candle is None:
@@ -84,7 +86,8 @@ def main():
 
 		price_changes.append([])
 
-		btc_price.append(candle['BTCUSDT_OPEN'])	
+		prices.append([candle['BTCUSDT_OPEN']] + [candle[c + 'BTC_OPEN'] for c in currencies[2:]])
+			
 		
 		for currency in currencies:
 			if currency == 'USDT':
@@ -99,13 +102,25 @@ def main():
 	initial_weights = np.ones(len(currencies)) / len(currencies)
 
 
-	plt.plot(np.array(btc_price) / btc_price[0])
+	best_performing = 0
+	best_return =  prices[-1][0]
+	for i, final_price in enumerate(prices[-1]):
+		if final_price / prices[0][i] > best_return:
+			best_performing = i
+			best_return = final_price / prices[0][i]
+
+	plt.plot(np.array([p[best_performing] for p in prices]) / prices[0][best_performing], label='BTC Price')
 
 	portfolio = PAMR(initial_weights)
 
 	values, weights = portfolio.run(price_changes)
 	#plt.plot(np.cumprod([p[2] for p in price_changes]))
-	plt.plot(values)
+	plt.plot(values, label='PAMR-2')
+	plt.yscale('log')
+	plt.xlabel('Trading Hour')
+	plt.ylabel('Return')
+	plt.ylim((0.4, 10))
+	plt.legend()
 	plt.show()
 
 if __name__ == '__main__':
