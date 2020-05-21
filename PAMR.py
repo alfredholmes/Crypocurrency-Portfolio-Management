@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 
 class PAMR:
 	#Parameters epsilon and c are as in the paper
-	def __init__(self, initial_portfolio, epsilon=0.5, c=500):
+	def __init__(self, initial_portfolio, epsilon=0.8, c=500):
 		
 		self.portfolio = np.array(initial_portfolio)
 		self.epsilon = epsilon
@@ -46,7 +46,7 @@ class PAMR:
 		for price_changes in price_change_list:
 
 			self.portfolio = np.array([1/3, 1/3, 1/3])
-			value = value * np.sum(np.array(price_changes) * self.portfolio)
+			value = value * np.sum(np.array(price_changes) * self.portfolio) * (1 - 0.001)
 			values.append(value)
 
 			self.portfolio = self.new_weights_PAMR(price_changes)
@@ -59,7 +59,7 @@ class PAMR:
 def main():
 	currencies = ['USDT', 'BTC', 'ETH'] #USDT is assumed to have a constant price of 1, everything else trades against BTC
 
-	data = candle_data.Candles()
+	data = candle_data.Candles('data/candles_1d.db')
 	candles = data.get_candles()
 
 	price_changes = []
@@ -90,7 +90,7 @@ def main():
 	initial_weights = [1/3, 1/3, 1/3]
 
 
-	#plt.plot(btc_price)
+	plt.plot(np.array(btc_price) / btc_price[0])
 
 	portfolio = PAMR(initial_weights)
 

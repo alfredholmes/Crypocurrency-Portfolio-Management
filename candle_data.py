@@ -8,7 +8,7 @@ Author: Alfred Holmes, https://github.com/alfredholmes
 import sqlite3
 
 class Candles:
-	def __init__(self, database='data/candles.db'):
+	def __init__(self, database='data/candles_1h.db'):
 		self.conn = sqlite3.connect(database)
 		self.cursor = self.conn.cursor()
 
