@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 
 class PAMR:
 	#Parameters epsilon and c are as in the paper
-	def __init__(self, initial_portfolio, epsilon=0.8, c=500):
+	def __init__(self, initial_portfolio, epsilon=0.5, c=500):
 		
 		self.portfolio = np.array(initial_portfolio)
 		self.epsilon = epsilon
@@ -28,28 +28,37 @@ class PAMR:
 	def new_weights_PAMR(self, price_changes):
 		price_changes = np.array(price_changes)
 		x_bar = np.mean(price_changes)
-		distance = np.sum((x_bar * np.ones(price_changes.size) - price_changes) ** 2) 
-		tau = self.loss(price_changes) / distance
-
+		distance = np.sum((x_bar * np.ones(price_changes.size) - price_changes) ** 2)
+		if distance > 0: 
+			tau = self.loss(price_changes) / distance
+		else:
+			tau = 0
 		new_weights = self.portfolio - tau * (price_changes - x_bar * np.ones(price_changes.size))
 		new_weights = self.normalise(new_weights)
 
-		return new_weights / np.sqrt(np.sum(new_weights ** 2))
+		self.portfolio = new_weights
 
 	def normalise(self, new_weights):
-		return minimize(lambda x: np.sum((x - new_weights) ** 2), np.array(new_weights), bounds = [(0, np.infty) for _ in new_weights], constraints=[{'type': 'eq', 'fun': lambda x: np.sum(x ** 2) - 1}]).x
+		minimum = minimize(lambda x: np.sum((x - new_weights) ** 2), np.array(new_weights), bounds = [(0, np.infty) for _ in new_weights], constraints=[{'type': 'eq', 'fun': lambda x: np.sum(x ** 2) - 1}]).x
+
+		return minimum / np.sum(minimum)
 
 	def run(self, price_change_list):
 		value = 1
 		values = [1]
 		portfolios = []
+		
+
 		for price_changes in price_change_list:
 
-			self.portfolio = np.array([1/3, 1/3, 1/3])
-			value = value * np.sum(np.array(price_changes) * self.portfolio) * (1 - 0.001)
+			value *= np.sum(self.portfolio * np.array(price_changes)) * (1 - 0.0004)
+			#print(self.portfolio, price_changes, (self.portfolio * np.array(price_changes)))
 			values.append(value)
 
-			self.portfolio = self.new_weights_PAMR(price_changes)
+
+
+			self.new_weights_PAMR(price_changes)
+
 		
 			portfolios.append(np.array(self.portfolio))
 			
@@ -57,9 +66,9 @@ class PAMR:
 
 
 def main():
-	currencies = ['USDT', 'BTC', 'ETH'] #USDT is assumed to have a constant price of 1, everything else trades against BTC
+	currencies = ['USDT', 'BTC', 'ETH', 'EOS', 'LTC'] #USDT is assumed to have a constant price of 1, everything else trades against BTC
 
-	data = candle_data.Candles('data/candles_1d.db')
+	data = candle_data.Candles('data/candles_1h.db')
 	candles = data.get_candles()
 
 	price_changes = []
@@ -87,7 +96,7 @@ def main():
 
 		previous_candle = candle
 
-	initial_weights = [1/3, 1/3, 1/3]
+	initial_weights = np.ones(len(currencies)) / len(currencies)
 
 
 	plt.plot(np.array(btc_price) / btc_price[0])
@@ -95,6 +104,7 @@ def main():
 	portfolio = PAMR(initial_weights)
 
 	values, weights = portfolio.run(price_changes)
+	#plt.plot(np.cumprod([p[2] for p in price_changes]))
 	plt.plot(values)
 	plt.show()
 

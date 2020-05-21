@@ -9,10 +9,10 @@ import requests, json, sqlite3, datetime
 
 
 #MARKETS = ['BTCUSDT', 'ETHBTC', 'BNBBTC', 'EOSBTC']
-MARKETS = ['BTCUSDT', 'ETHBTC']
-START_DATE = datetime.datetime(year=2018, month=1, day=1)
-N = 1
-INTERVAL = '1d'
+MARKETS = ['BTCUSDT', 'ETHBTC', 'EOSBTC', 'LTCBTC']
+START_DATE = datetime.datetime(year=2017, month=11, day=1)
+N = 20
+INTERVAL = '1h'
 INTERVALS = {
 			 '1m': 60 * 1000,
 			 
