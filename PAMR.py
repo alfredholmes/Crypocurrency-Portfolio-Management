@@ -7,14 +7,14 @@ Based on https://link.springer.com/content/pdf/10.1007/s10994-012-5281-z.pdf
 
 import candle_data
 import numpy as np
-from scipy.optimize import minimize as minimize#
+from scipy.optimize import minimize as minimize
 
 
 from matplotlib import pyplot as plt
 
 class PAMR:
 	#Parameters epsilon and c are as in the paper
-	def __init__(self, initial_portfolio, epsilon=0.5, c=8000):
+	def __init__(self, initial_portfolio, epsilon=0.8, c=0.1):
 		
 		self.portfolio = np.array(initial_portfolio)
 		self.epsilon = epsilon
@@ -29,7 +29,7 @@ class PAMR:
 		price_changes = np.array(price_changes)
 		x_bar = np.mean(price_changes)
 		distance = np.sum((x_bar * np.ones(price_changes.size) - price_changes) ** 2)
-		tau = self.loss(price_changes) / (distance + 1 / 2*self.c)
+		tau = self.loss(price_changes) / (distance + 1 / (2*self.c))
 
 		new_weights = self.portfolio - tau * (price_changes - x_bar * np.ones(price_changes.size))
 		new_weights = self.normalise(new_weights)
@@ -37,7 +37,7 @@ class PAMR:
 		self.portfolio = new_weights
 
 	def normalise(self, new_weights):
-		minimum = minimize(lambda x: np.sum((x - new_weights) ** 2), np.array(new_weights), bounds = [(0, np.infty) for _ in new_weights], constraints=[{'type': 'eq', 'fun': lambda x: np.sum(x ** 2) - 1}]).x
+		minimum = minimize(lambda x: np.sum((x - new_weights) ** 2), np.array(new_weights), jac=lambda x: 2 * x, bounds = [(0, np.infty) for _ in new_weights], constraints=[{'type': 'eq', 'fun': lambda x: np.sum(x ** 2) - 1}]).x
 
 		return minimum / np.sum(minimum)
 
@@ -53,9 +53,10 @@ class PAMR:
 
 			value *= np.sum(self.portfolio * np.array(price_changes))
 			self.new_weights_PAMR(price_changes)
-			traded_volume = np.sum(np.abs(self.portfolio - previous_portfolio)) / 2
-			value -= 2* value * traded_volume * (1 - 0.001)
-			#print(self.portfolio, price_changes, (self.portfolio * np.array(price_changes)))
+			traded_volume = np.sum(np.abs(self.portfolio - previous_portfolio))
+			value -= value * traded_volume * (0.0007)
+			
+			
 			values.append(value)
 
 
@@ -68,7 +69,7 @@ class PAMR:
 
 
 def main():
-	currencies = ['USDT', 'BTC', 'ETH', 'EOS', 'LTC'] #USDT is assumed to have a constant price of 1, everything else trades against BTC
+	currencies = ['USDT', 'BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'BCH', 'XRP'] #USDT is assumed to have a constant price of 1, everything else trades against BTC
 
 	data = candle_data.Candles('data/candles_30m.db')
 	candles = data.get_candles()
@@ -109,7 +110,8 @@ def main():
 			best_performing = i
 			best_return = final_price / prices[0][i]
 
-	plt.plot(np.array([p[best_performing] for p in prices]) / prices[0][best_performing], label='BTC Price')
+	plt.figure(0)
+	plt.plot(np.array([p[best_performing] for p in prices]) / prices[0][best_performing], label=currencies[best_performing] +' Price')
 
 	portfolio = PAMR(initial_weights)
 
@@ -119,7 +121,12 @@ def main():
 	plt.yscale('log')
 	plt.xlabel('Trading Hour')
 	plt.ylabel('Return')
-	plt.ylim((0.4, 10))
+	#plt.ylim((0.4, 10))
+	plt.legend()
+
+	plt.figure(1)
+	for i, currency in enumerate(currencies):
+		plt.plot([w[i] for w in weights], label=currency)
 	plt.legend()
 	plt.show()
 

@@ -9,9 +9,9 @@ import requests, json, sqlite3, datetime
 
 
 #MARKETS = ['BTCUSDT', 'ETHBTC', 'BNBBTC', 'EOSBTC']
-MARKETS = ['BTCUSDT', 'ETHBTC', 'EOSBTC', 'LTCBTC']
+MARKETS = ['BTCUSDT', 'ETHBTC', 'EOSBTC', 'LTCBTC', 'BNBBTC', 'XRPBTC', 'BCHBTC']
 START_DATE = datetime.datetime(year=2017, month=11, day=1)
-N = 20
+N = 40
 INTERVAL = '30m'
 INTERVALS = {
 			 '1m': 60 * 1000,
@@ -80,7 +80,6 @@ def main():
 			r = requests.get('https://api.binance.com/api/v3/klines', params=params)
 
 			candles = json.loads(r.text)
-			
 			for candle in candles:
 				try:
 					interval_data[candle[0]][market] = candle[1:]
@@ -88,8 +87,10 @@ def main():
 					print('Key Error:', market, (candle[0] - start_ms) / INTERVALS[INTERVAL])
 					actual = int((candle[0] - start_ms) / INTERVALS[INTERVAL]) * INTERVALS[INTERVAL] + start_ms
 					interval_data[actual][market] = candle[1:]
-
-			initial_values[market] = candles[0][1:]
+			
+			if market not in initial_values:
+				if len(candles) > 0:
+					initial_values[market] = candles[0][1:]
 
 
 
