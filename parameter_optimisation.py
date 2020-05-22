@@ -8,9 +8,10 @@ Author: Alfred Holmes, https://github.com/alfredholmes
 """
 
 import PAMR
-from scipy.optimize import brute as brute
-from scipy.optimize import minimize as minimize
+from scipy.optimize import minimize
 import numpy as np
+
+from multiprocessing import Pool
 
 DATABASE = 'data/candles_30m.db'
 
@@ -28,8 +29,14 @@ def PAMR_mean_return(epsilon, c, price_changes):
 
 def main():
 	price_changes = PAMR.get_prices(DATABASE) 
-	result = brute(lambda x: -PAMR_mean_return(x[0], x[1], price_changes), [(0.5, 1), (0.001, 10)], Ns=20)
-	initial = result.x0
+	
+	epsilon_range = (0.5, 1)
+	c_range = (0.0001, 20)
+
+
+	parameters = [(x, y, price_changes) for x in np.linspace(epsilon_range[0], epsilon_range[1]) for y in np.linspace(c_range[0], c_range[1])]
+	with Pool() as p:
+		results = p.starmap(PAMR_mean_return, parameters)
 
 	result = minimize(lambda x: -PAMR_mean_return(x[0], x[1], price_changes), initial)
 
