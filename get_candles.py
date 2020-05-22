@@ -10,9 +10,9 @@ import requests, json, sqlite3, datetime
 
 #MARKETS = ['BTCUSDT', 'ETHBTC', 'BNBBTC', 'EOSBTC']
 MARKETS = ['BTCUSDT', 'ETHBTC', 'EOSBTC', 'LTCBTC', 'BNBBTC', 'XRPBTC', 'BCHBTC']
-START_DATE = datetime.datetime(year=2017, month=11, day=1)
-N = 40
-INTERVAL = '30m'
+START_DATE = datetime.datetime(year=2017, month=10, day=1)
+N = 100
+INTERVAL = '5m'
 INTERVALS = {
 			 '1m': 60 * 1000,
 			 
@@ -63,13 +63,16 @@ def main():
 
 
 	#dicts to hold data
-	interval_data = {time: {market: [] for market in MARKETS} for time in times}
+	interval_data = {time: {market: [] for market in MARKETS} for time in times if time < datetime.datetime.now().timestamp() * 1000 + INTERVALS[INTERVAL]}
 	initial_values = {}
 
 	for market in MARKETS:
 		for i in range(N):
 			current_ms = start_ms + i * 1000 * INTERVALS[INTERVAL]
 			print(current_ms)
+			if current_ms > datetime.datetime.now().timestamp() * 1000:
+				print('Querying future candles')
+				break
 			params = {
 				'symbol': market,
 				'interval': INTERVAL,
@@ -101,6 +104,9 @@ def main():
 	previous_values = initial_values
 
 	for time in times:
+		if time > datetime.datetime.now().timestamp() * 1000 + INTERVALS[INTERVAL]:
+			continue
+
 		data = {'open_time': time}
 		for market in MARKETS:
 			candle = interval_data[time][market]
