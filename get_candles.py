@@ -59,18 +59,19 @@ def main():
 	start_ms = int(START_DATE.timestamp() * LIMIT)	
 	end_ms = start_ms + N * INTERVALS[INTERVAL] * LIMIT
 
-	times = [start_ms + i * INTERVALS[INTERVAL] for i in range(N * LIMIT + 1)]
+	times = [start_ms + i * INTERVALS[INTERVAL] for i in range(N * LIMIT)]
 
 
-	#dicts to hold data
-	interval_data = {time: {market: [] for market in MARKETS} for time in times if time < datetime.datetime.now().timestamp() * 1000 + 5 * INTERVALS[INTERVAL]}
+	#dicts to hold data 
+	now = datetime.datetime.now().timestamp() * 1000
+	interval_data = {time: {market: [] for market in MARKETS} for time in times if time < now}
 	initial_values = {}
 
 	for market in MARKETS:
 		for i in range(N):
 			current_ms = start_ms + i * 1000 * INTERVALS[INTERVAL]
 			print(current_ms)
-			if current_ms > datetime.datetime.now().timestamp() * 1000:
+			if current_ms > now:
 				print('Querying future candles')
 				break
 			params = {
@@ -84,6 +85,8 @@ def main():
 
 			candles = json.loads(r.text)
 			for candle in candles:
+				if candle[0] > now:
+					break
 				try:
 					interval_data[candle[0]][market] = candle[1:]
 				except KeyError:
@@ -106,7 +109,7 @@ def main():
 	previous_values = initial_values
 
 	for time in times:
-		if time > datetime.datetime.now().timestamp() * 1000 + INTERVALS[INTERVAL]:
+		if time > now:
 			continue
 
 		data = {'open_time': time}

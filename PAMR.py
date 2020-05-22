@@ -104,7 +104,7 @@ def get_prices(db, currencies=['USDT', 'BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'BCH',
 def main():
 	currencies = ['USDT', 'BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'BCH', 'XRP'] #USDT is assumed to have a constant price of 1, everything else trades against BTC
 
-	data = candle_data.Candles('data/candles_30m.db')
+	data = candle_data.Candles('data/candles_5m.db')
 	candles = data.get_candles()
 
 	price_changes = []
@@ -148,7 +148,7 @@ def main():
 	plt.figure(0)
 	plt.plot(np.array([p[best_performing] for p in prices]) / prices[0][best_performing], label=currencies[best_performing + 1] +' Price')
 
-	portfolio = PAMR(initial_weights, 0.8, 10, 0.00075)
+	portfolio = PAMR(initial_weights, 0.80, 2, 0.00075)
 
 	values, weights, returns = portfolio.run(price_changes)
 	#plt.plot(np.cumprod([p[2] for p in price_changes]))
