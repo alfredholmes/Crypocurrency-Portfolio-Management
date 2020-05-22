@@ -34,9 +34,11 @@ def main():
 	c_range = (0.0001, 20)
 
 
-	parameters = [(x, y, price_changes) for x in np.linspace(epsilon_range[0], epsilon_range[1]) for y in np.linspace(c_range[0], c_range[1])]
+	parameters = [(x, y, price_changes) for x in np.linspace(epsilon_range[0], epsilon_range[1], 10) for y in np.linspace(c_range[0], c_range[1], 10)]
 	with Pool() as p:
 		results = p.starmap(PAMR_mean_return, parameters)
+
+	initial = results.index(max(results))
 
 	result = minimize(lambda x: -PAMR_mean_return(x[0], x[1], price_changes), initial)
 
