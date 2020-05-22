@@ -55,6 +55,8 @@ class PAMR:
 			previous_portfolio = np.array(self.portfolio)
 			previous_value = value
 
+			self.portfolio =  self.portfolio * np.array(price_changes) / np.sum(self.portfolio * np.array(price_changes))
+
 			value *= np.sum(self.portfolio * np.array(price_changes))
 			self.new_weights_PAMR(price_changes)
 			traded_volume = np.sum(np.abs(self.portfolio - previous_portfolio))
@@ -146,7 +148,7 @@ def main():
 	plt.figure(0)
 	plt.plot(np.array([p[best_performing] for p in prices]) / prices[0][best_performing], label=currencies[best_performing + 1] +' Price')
 
-	portfolio = PAMR(initial_weights, 1.25, 0.00072187, 0.00075)
+	portfolio = PAMR(initial_weights, 0.8, 10, 0.00075)
 
 	values, weights, returns = portfolio.run(price_changes)
 	#plt.plot(np.cumprod([p[2] for p in price_changes]))

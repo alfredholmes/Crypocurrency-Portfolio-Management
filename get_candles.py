@@ -10,8 +10,8 @@ import requests, json, sqlite3, datetime
 
 #MARKETS = ['BTCUSDT', 'ETHBTC', 'BNBBTC', 'EOSBTC']
 MARKETS = ['BTCUSDT', 'ETHBTC', 'EOSBTC', 'LTCBTC', 'BNBBTC', 'XRPBTC', 'BCHBTC']
-START_DATE = datetime.datetime(year=2017, month=10, day=1)
-N = 100
+START_DATE = datetime.datetime(year=2017, month=11, day=1)
+N = 1000
 INTERVAL = '5m'
 INTERVALS = {
 			 '1m': 60 * 1000,
@@ -63,7 +63,7 @@ def main():
 
 
 	#dicts to hold data
-	interval_data = {time: {market: [] for market in MARKETS} for time in times if time < datetime.datetime.now().timestamp() * 1000 + INTERVALS[INTERVAL]}
+	interval_data = {time: {market: [] for market in MARKETS} for time in times if time < datetime.datetime.now().timestamp() * 1000 + 5 * INTERVALS[INTERVAL]}
 	initial_values = {}
 
 	for market in MARKETS:
@@ -94,6 +94,8 @@ def main():
 			if market not in initial_values:
 				if len(candles) > 0:
 					initial_values[market] = candles[0][1:]
+				else:
+					print('length of ' + market + '0')
 
 
 
