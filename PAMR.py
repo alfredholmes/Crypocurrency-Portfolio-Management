@@ -31,7 +31,11 @@ class PAMR:
 		price_changes = np.array(price_changes)
 		x_bar = np.mean(price_changes)
 		distance = np.sum((x_bar * np.ones(price_changes.size) - price_changes) ** 2)
-		tau = self.loss(price_changes) / (distance + 1 / (2*self.c))
+		if self.c > 0:
+			tau = self.loss(price_changes) / (distance + 1 / (2*self.c))
+		else:
+			tau = 2**10
+			self.portfolio = np.zeros(self.portfolio.size)
 
 		new_weights = self.portfolio - tau * (price_changes - x_bar * np.ones(price_changes.size))
 		new_weights = self.normalise(new_weights)
@@ -50,7 +54,8 @@ class PAMR:
 		values = [1]
 		portfolios = []
 		returns = []
-		
+		btc_trading_volume = []
+		btc_price = 1/3
 
 		for price_changes in price_change_list:
 			previous_portfolio = np.array(self.portfolio)
@@ -66,12 +71,14 @@ class PAMR:
 			values.append(value)
 			returns.append(value / previous_value)
 
+			btc_price *= price_changes[1]
 
-
+			btc_trading_volume.append(traded_volume * value / btc_price)
+			
 		
 			portfolios.append(np.array(self.portfolio))
 			
-		return values, portfolios, returns
+		return values, portfolios, returns, btc_trading_volume
 
 def get_prices(db, start_time = 0, currencies=['USDT', 'BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'BCH', 'XRP']):
 
@@ -107,8 +114,8 @@ def main():
 	#currencies = ['USDT', 'BTC', 'ETH', 'BNB'] #USDT is assumed to have a constant price of 1, everything else trades against BTC
 
 	data = candle_data.Candles('data/candles_30m.db')
-	#candles = data.get_candles(datetime.datetime(year=2020, month=1, day=1).timestamp() * 1000)
-	candles = data.get_candles()
+	candles = data.get_candles(datetime.datetime(year=2020, month=1, day=1).timestamp() * 1000)
+	#candles = data.get_candles()
 	price_changes = []
 	previous_candle = None
 
@@ -151,11 +158,12 @@ def main():
 	plt.figure(0)
 	plt.plot(np.array([p[best_performing] for p in prices]) / prices[0][best_performing], label=currencies[best_performing + 1] +' Price')
 
-	#portfolio = PAMR(initial_weights, 0.7222222222222222, 2.2223111111111113, 0.001)
-	portfolio = PAMR(initial_weights, 0.7142857142857142, 2.040914285714286, 0.001)
-	#portfolio = PAMR(initial_weights, 0.5, 20, 0.001)
-		
-	values, weights, returns = portfolio.run(price_changes)
+	#portfolio = PAMR(initial_weights, 0.25679977, 0.83093364, 0.00076)
+	portfolio = PAMR(initial_weights, 0.0, 4.166666666666667, 0.0006)
+	
+	#portfolio = PAMR(initial_weights, 0.0, 18.75, 0.0003)
+
+	values, weights, returns, traded_volume = portfolio.run(price_changes)
 	#plt.plot(np.cumprod([p[2] for p in price_changes]))
 	plt.plot(values, label='PAMR-2')
 	plt.yscale('log')
@@ -168,6 +176,9 @@ def main():
 	for i, currency in enumerate(currencies):
 		plt.plot([w[i] for w in weights], label=currency)
 	plt.legend()
+
+	plt.figure(2)
+	plt.plot([np.sum(traded_volume[max(int(i - 30 * 24), 0):i]) for i in range(len(traded_volume))])
 
 	#plt.figure(2)
 	#plt.hist(returns, bins=4000, density=True, alpha=0.5)
