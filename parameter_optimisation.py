@@ -10,6 +10,7 @@ Author: Alfred Holmes, https://github.com/alfredholmes
 import PAMR
 from scipy.optimize import minimize
 import numpy as np
+import datetime
 
 from multiprocessing import Pool
 
@@ -21,26 +22,30 @@ def PAMR_mean_return(epsilon, c, price_changes):
 	#initial_portfolio = np.ones(len(price_changes[0])) / len(price_changes[0])
 	initial_portfolio = np.zeros(len(price_changes[0]))
 	initial_portfolio[0] = 1
-	portfolio = PAMR.PAMR(initial_portfolio, epsilon, c, 0.00075)
-	_, _, returns = portfolio.run(price_changes)
-	print(epsilon, c, np.mean(returns))
+	portfolio = PAMR.PAMR(initial_portfolio, epsilon, c, 0.001)
+	values, _, returns = portfolio.run(price_changes)
+	
+	daily_returns = np.array(values[48:]) / np.array(values[:-48]) 
+	
+
+	print(epsilon, c, np.mean(daily_returns))
 
 	return np.mean(returns)
 
 def main():
-	price_changes = PAMR.get_prices(DATABASE) 
+	price_changes = PAMR.get_prices(DATABASE, datetime.datetime(year=2020, month=1, day=1).timestamp() * 1000) 
 	
-	epsilon_range = (0.5, 1)
-	c_range = (0.0001, 20)
+	epsilon_range = (0, 1)
+	c_range = (0.0001, 100)
 
 
-	parameters = [(x, y, price_changes) for x in np.linspace(epsilon_range[0], epsilon_range[1], 10) for y in np.linspace(c_range[0], c_range[1], 10)]
+	parameters = [(x, y, price_changes) for x in np.linspace(epsilon_range[0], epsilon_range[1]) for y in np.linspace(c_range[0], c_range[1])]
 	with Pool() as p:
 		results = p.starmap(PAMR_mean_return, parameters)
 
 	initial = results.index(max(results))
-
-	result = minimize(lambda x: -PAMR_mean_return(x[0], x[1], price_changes), initial)
+	print(parameters[initial][:2])
+	result = minimize(lambda x: -PAMR_mean_return(x[0], x[1], price_changes), parameters[initial][:2])
 
 	print(result)
 

@@ -8,6 +8,7 @@ Based on https://link.springer.com/content/pdf/10.1007/s10994-012-5281-z.pdf
 import candle_data
 import numpy as np
 from scipy.optimize import minimize as minimize
+import datetime
 
 
 from matplotlib import pyplot as plt
@@ -72,10 +73,10 @@ class PAMR:
 			
 		return values, portfolios, returns
 
-def get_prices(db, currencies=['USDT', 'BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'BCH', 'XRP']):
+def get_prices(db, start_time = 0, currencies=['USDT', 'BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'BCH', 'XRP']):
 
 	data = candle_data.Candles(db)
-	candles = data.get_candles()
+	candles = data.get_candles(start_time)
 
 	price_changes = []
 	previous_candle = None
@@ -103,10 +104,11 @@ def get_prices(db, currencies=['USDT', 'BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'BCH',
 
 def main():
 	currencies = ['USDT', 'BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'BCH', 'XRP'] #USDT is assumed to have a constant price of 1, everything else trades against BTC
+	#currencies = ['USDT', 'BTC', 'ETH', 'BNB'] #USDT is assumed to have a constant price of 1, everything else trades against BTC
 
-	data = candle_data.Candles('data/candles_5m.db')
+	data = candle_data.Candles('data/candles_30m.db')
+	#candles = data.get_candles(datetime.datetime(year=2020, month=1, day=1).timestamp() * 1000)
 	candles = data.get_candles()
-
 	price_changes = []
 	previous_candle = None
 
@@ -133,11 +135,12 @@ def main():
 
 		previous_candle = candle
 
-	initial_weights = np.ones(len(currencies)) / len(currencies)
-	#initial_weights = np.zeros(len(currencies))
-	#initial_weights[0] = 1
+	#initial_weights = np.ones(len(currencies)) / len(currencies)
+	initial_weights = np.zeros(len(currencies))
+	initial_weights[0] = 1
 
 
+	
 	best_performing = 0
 	best_return =  prices[-1][0]
 	for i, final_price in enumerate(prices[-1]):
@@ -148,13 +151,15 @@ def main():
 	plt.figure(0)
 	plt.plot(np.array([p[best_performing] for p in prices]) / prices[0][best_performing], label=currencies[best_performing + 1] +' Price')
 
-	portfolio = PAMR(initial_weights, 0.80, 2, 0.00075)
-
+	#portfolio = PAMR(initial_weights, 0.7222222222222222, 2.2223111111111113, 0.001)
+	portfolio = PAMR(initial_weights, 0.7142857142857142, 2.040914285714286, 0.001)
+	#portfolio = PAMR(initial_weights, 0.5, 20, 0.001)
+		
 	values, weights, returns = portfolio.run(price_changes)
 	#plt.plot(np.cumprod([p[2] for p in price_changes]))
 	plt.plot(values, label='PAMR-2')
 	plt.yscale('log')
-	plt.xlabel('Trading Hour')
+	plt.xlabel('Trading Period')
 	plt.ylabel('Return')
 	#plt.ylim((0.4, 10))
 	plt.legend()
