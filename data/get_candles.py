@@ -9,10 +9,10 @@ import requests, json, sqlite3, datetime
 
 
 #MARKETS = ['BTCUSDT', 'ETHBTC', 'BNBBTC', 'EOSBTC']
-MARKETS = ['BTCUSDT', 'ETHBTC', 'EOSBTC', 'LTCBTC', 'BNBBTC', 'XRPBTC', 'BCHBTC']
+MARKETS = ['BTCUSDT', 'ETHBTC', 'EOSBTC', 'LTCBTC', 'BNBBTC', 'XRPBTC', 'BCHBTC', 'ADABTC', 'XMRBTC']
 START_DATE = datetime.datetime(year=2017, month=11, day=1)
 N = 1000
-INTERVAL = '1h'
+INTERVAL = '30m'
 INTERVALS = {
 			 '1m': 60 * 1000,
 			 
@@ -48,7 +48,7 @@ def main():
 		columns += market + '_OPEN float, ' + market + '_CLOSE float,' + market + '_HIGH float,' + market + '_LOW float,' + market + '_VOLUME float,'
 	
 	try:
-		#c.execute('DROP TABLE CANDLES') 
+		c.execute('DROP TABLE CANDLES') 
 		pass
 	except:
 		pass

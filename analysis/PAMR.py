@@ -110,16 +110,21 @@ def get_prices(db, start_time = 0, currencies=['USDT', 'BTC', 'ETH', 'EOS', 'LTC
 
 
 def main():
-	currencies = ['USDT', 'BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'BCH', 'XRP'] #USDT is assumed to have a constant price of 1, everything else trades against BTC
-	#currencies = ['USDT', 'BTC', 'ETH', 'BNB'] #USDT is assumed to have a constant price of 1, everything else trades against BTC
-
-	data = candle_data.Candles('data/candles_30m.db')
-	candles = data.get_candles(datetime.datetime(year=2020, month=1, day=1).timestamp() * 1000)
+	currencies = ['USDT', 'BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'XRP', 'BCH', 'ADA', 'XMR']
+	data = candle_data.Candles('data/candles_1h.db')
+	candles = data.get_candles(datetime.datetime(year=2018, month=6, day=1).timestamp() * 1000)
 	#candles = data.get_candles()
 	price_changes = []
 	previous_candle = None
 
+	initial_weights = np.zeros(len(currencies))
+	initial_weights[0] = 1
 
+
+	#portfolio = PAMR(initial_weights, 0.25679977, 0.83093364, 0.00076)
+	#portfolio = PAMR(initial_weights, 0.5, 5, 0.00076)
+
+	
 	prices = []
 
 	for candle in candles:
@@ -143,8 +148,7 @@ def main():
 		previous_candle = candle
 
 	#initial_weights = np.ones(len(currencies)) / len(currencies)
-	initial_weights = np.zeros(len(currencies))
-	initial_weights[0] = 1
+
 
 
 	
@@ -158,18 +162,15 @@ def main():
 	plt.figure(0)
 	plt.plot(np.array([p[best_performing] for p in prices]) / prices[0][best_performing], label=currencies[best_performing + 1] +' Price')
 
-	#portfolio = PAMR(initial_weights, 0.25679977, 0.83093364, 0.00076)
-	portfolio = PAMR(initial_weights, 0.0, 4.166666666666667, 0.0006)
 	
-	#portfolio = PAMR(initial_weights, 0.0, 18.75, 0.0003)
-
 	values, weights, returns, traded_volume = portfolio.run(price_changes)
-	#plt.plot(np.cumprod([p[2] for p in price_changes]))
+	
 	plt.plot(values, label='PAMR-2')
 	plt.yscale('log')
 	plt.xlabel('Trading Period')
 	plt.ylabel('Return')
-	#plt.ylim((0.4, 10))
+	
+
 	plt.legend()
 
 	plt.figure(1)
@@ -180,9 +181,6 @@ def main():
 	plt.figure(2)
 	plt.plot([np.sum(traded_volume[max(int(i - 30 * 24), 0):i]) for i in range(len(traded_volume))])
 
-	#plt.figure(2)
-	#plt.hist(returns, bins=4000, density=True, alpha=0.5)
-	#plt.hist(np.array([p[best_performing] for p in prices])[:-1] / np.array([p[best_performing] for p in prices])[1:], bins=4000, density=True, alpha=0.5)
 	plt.show()
 
 if __name__ == '__main__':
