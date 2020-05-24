@@ -7,11 +7,14 @@ Parameters fitted to maximise the mean daily return, algorithm runs every 30 min
 
 Current portfolio consists of 8 large market cap coins.
 
-###Portfolio through time 
+### Portfolio through time 
 ![Portfolio through time](https://raw.githubusercontent.com/alfredholmes/BinancePAMR/master/results/portfolio-through-time.png)
 
 ### Requirements
 	pip3 install requests numpy scipy  
 
-
-
+### To run PAMR simulation
+	git clone https://github.com/alfredholmes/binancePAMR.git
+	cd binancePAMR
+	python3 data/get_candles.py 
+	python3 analysis/PAMR.py

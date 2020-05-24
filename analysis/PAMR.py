@@ -80,10 +80,10 @@ class PAMR:
 			
 		return values, portfolios, returns, btc_trading_volume
 
-def get_prices(db, start_time = 0, currencies=['USDT', 'BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'BCH', 'XRP']):
+def get_prices(db, start_time = 0, end_time=datetime.datetime.now().timestamp() * 1000, currencies=['USDT', 'BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'XRP', 'BCH', 'ADA', 'XMR']):
 
 	data = candle_data.Candles(db)
-	candles = data.get_candles(start_time)
+	candles = data.get_candles(start_time, end_time)
 
 	price_changes = []
 	previous_candle = None
@@ -111,8 +111,8 @@ def get_prices(db, start_time = 0, currencies=['USDT', 'BTC', 'ETH', 'EOS', 'LTC
 
 def main():
 	currencies = ['USDT', 'BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'XRP', 'BCH', 'ADA', 'XMR']
-	data = candle_data.Candles('data/candles_1h.db')
-	candles = data.get_candles(datetime.datetime(year=2018, month=6, day=1).timestamp() * 1000)
+	data = candle_data.Candles('data/candles_30m.db')
+	candles = data.get_candles(datetime.datetime(year=2017, month=1, day=1).timestamp() * 1000)
 	#candles = data.get_candles()
 	price_changes = []
 	previous_candle = None
@@ -120,7 +120,11 @@ def main():
 	initial_weights = np.zeros(len(currencies))
 	initial_weights[0] = 1
 
-
+	#portfolio = PAMR(initial_weights,0.0010157525539398193, 4.166423852245013, 0.00076)
+	#0.08333333333333333, 3.125
+	portfolio = PAMR(initial_weights,0.08333333333333333, 3.125, 0.00061)
+	
+	#0.005435247530948529 4.16536406093071
 	#portfolio = PAMR(initial_weights, 0.25679977, 0.83093364, 0.00076)
 	#portfolio = PAMR(initial_weights, 0.5, 5, 0.00076)
 
