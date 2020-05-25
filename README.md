@@ -18,3 +18,11 @@ Current portfolio consists of 8 large market cap coins.
 	cd binancePAMR
 	python3 data/get_candles.py 
 	python3 analysis/PAMR.py
+
+### References / useful papers
+#### Passive aggressive mean reversion 
+Li, B., Zhao, P., Hoi, S.C.H. et al. PAMR: Passive aggressive mean reversion strategy for portfolio selection. Mach Learn 87, 221–258 (2012). https://doi.org/10.1007/s10994-012-5281-z
+https://link.springer.com/content/pdf/10.1007/s10994-012-5281-z.pdf
+#### Multiperiodical Asymmetric Mean Reversion
+Peng, Zijin & Xu, Weijun & Li, Hongyi. (2020). A Novel Online Portfolio Selection Strategy with Multiperiodical Asymmetric Mean Reversion. Discrete Dynamics in Nature and Society. 2020. 1-13. 10.1155/2020/5956146. 
+http://downloads.hindawi.com/journals/ddns/2020/5956146.pdf
