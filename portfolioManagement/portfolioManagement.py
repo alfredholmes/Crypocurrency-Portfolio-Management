@@ -49,8 +49,12 @@ class portfolioManager:
 		self.value *= self.execute_trade(trade)
 
 		#update data
-		self.values.append(self.value)
+		self.values.append(self.value * self.fees(time))
 		self.portfolios.append(np.array(self.portfolio))
+
+	def fees(self, time):
+		return 1
+
 
 	#Finds the most efficient (hopefully) trade to get to the desired portfolio
 	#TODO: constraints, evaluate performance
@@ -95,10 +99,11 @@ class portfolioManager:
 		return np.array(self.portfolio)
 
 class PAMRPortfolioManager(portfolioManager):
-	def __init__(self, n, epsilon, c, trading_fee =0):
+	def __init__(self, n, epsilon, c, trading_fee =0, margin=0):
 		super().__init__(n, trading_fee)
 		self.epsilon = epsilon
 		self.c = c
+		self.margin = margin
 
 	def calculate_next_portfolio(self):
 		price_changes = np.array(self.price_changes[-1])
@@ -118,11 +123,14 @@ class PAMRPortfolioManager(portfolioManager):
 
 	
 	def normalise(self, new_weights):
-		result = minimize(lambda x: np.sum((x - new_weights) ** 2), np.array(new_weights), jac=lambda x: 2 * (x - new_weights), bounds = [(0, np.infty) for _ in new_weights], constraints=[{'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1}])
-		#maybe check 
+		if self.margin == 0:
+			result = minimize(lambda x: np.sum((x - new_weights) ** 2), np.array(new_weights), jac=lambda x: 2 * (x - new_weights), bounds = [(0, np.infty) for _ in new_weights], constraints=[{'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1}])
+		else:
+			result = minimize(lambda x: np.sum((x - new_weights) ** 2), np.array(new_weights), jac=lambda x: 2 * (x - new_weights), constraints=[{'type': 'ineq', 'fun': lambda x: self.margin - np.sum(np.abs(x))}])
+
 		minimum = result.x
 
-		return minimum / np.sum(minimum)
+		return minimum / np.sum(np.abs(minimum)) * self.margin
 
 	def loss(self, price_changes):
 		return np.max([0, np.sum(self.portfolio * price_changes) - self.epsilon])
