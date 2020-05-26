@@ -45,12 +45,19 @@ class portfolioManager:
 		#pick next portfolio
 		target_portfolio = self.calculate_next_portfolio()
 
-		trade = self.find_trade(target_portfolio)
-		self.value *= self.execute_trade(trade)
+		#trade = self.find_trade(target_portfolio)
+		trade = self.portfolio - target_portfolio
+		trade[0] = 0
+
+		self.execute_trade(trade)
+		print(trade)
+
 
 		#update data
 		self.values.append(self.value * self.fees(time))
 		self.portfolios.append(np.array(self.portfolio))
+
+
 
 	def fees(self, time):
 		return 1
@@ -79,19 +86,23 @@ class portfolioManager:
 		first_pass = np.min([np.zeros(trade.size), trade], axis=0)
 		second_pass = np.max([np.zeros(trade.size), trade], axis=0)
 
+		new_portfolio = np.max([self.portfolio + first_pass, np.zeros(self.portfolio.size)], axis=0)
+		new_portfolio[0] += -np.sum(first_pass) * (1 - self.trading_fee)
+		new_portfolio[0] -= np.sum(second_pass)
+		c = 0
+		for i, v in enumerate(second_pass):
+			if new_portfolio[0] - c < v:
+				second_pass[i] = np.max([0, new_portfolio[0] - v])
+			c += v
+		new_portfolio +=  second_pass * (1 - self.trading_fee)
+		self.portfolio = new_portfolio / np.sum(np.abs(new_portfolio))
+
 		first_pass_fees = np.sum(np.abs(first_pass)) * self.trading_fee
 		second_pass_fees = np.sum(np.abs(second_pass)) * self.trading_fee
 
-		portfolio_value= 1 - first_pass_fees - (1 - first_pass_fees) * second_pass_fees
 
-		new_portfolio = self.portfolio + first_pass
-		new_portfolio[0] += -np.sum(first_pass) * (1 - self.trading_fee)
-		new_portfolio[0] -= np.sum(second_pass)
-		new_portfolio +=  second_pass * (1 - self.trading_fee)
+		self.value *= (1 - first_pass_fees) * (1 - second_pass_fees)
 
-		self.portfolio = new_portfolio / np.sum(new_portfolio)
-
-		return portfolio_value
 
 
 	#for base class the strategy is buy and hold
@@ -124,13 +135,15 @@ class PAMRPortfolioManager(portfolioManager):
 	
 	def normalise(self, new_weights):
 		if self.margin == 0:
-			result = minimize(lambda x: np.sum((x - new_weights) ** 2), np.array(new_weights), jac=lambda x: 2 * (x - new_weights), bounds = [(0, np.infty) for _ in new_weights], constraints=[{'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1}])
+			result = minimize(lambda x: np.sum((x - new_weights) ** 2), np.array(new_weights), jac=lambda x: 2 * (x - new_weights), bounds = [(0, np.infty) for _ in new_weights], constraints=[{'type': 'eq', 'fun': lambda x: np.sum(x) - 1}])
+			minimum = result.x
+			return minimum / np.sum(minimum)
 		else:
 			result = minimize(lambda x: np.sum((x - new_weights) ** 2), np.array(new_weights), jac=lambda x: 2 * (x - new_weights), constraints=[{'type': 'ineq', 'fun': lambda x: self.margin - np.sum(np.abs(x))}])
+			minimum = result.x
+			return minimum / np.sum(np.abs(minimum)) * self.margin
 
-		minimum = result.x
 
-		return minimum / np.sum(np.abs(minimum)) * self.margin
 
 	def loss(self, price_changes):
 		return np.max([0, np.sum(self.portfolio * price_changes) - self.epsilon])

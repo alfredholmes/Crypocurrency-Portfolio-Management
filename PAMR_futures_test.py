@@ -21,7 +21,7 @@ def main():
 			price_changes.append(prices[-1] / prices[-2])
 			times.append(candle['open_time'])
 
-	manager = PAMRPortfolioManager(len(CURRENCIES), 0.8, 200, 0.0004, 1)
+	manager = PAMRPortfolioManager(len(CURRENCIES), 0.5, 50, 0.0004, 0)
 	for change, time in zip(price_changes, times):
 		print((times[-1] - time) / (1000 * 60 * 30))
 		manager.update(time, change)
