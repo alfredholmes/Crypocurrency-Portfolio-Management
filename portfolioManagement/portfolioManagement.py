@@ -2,31 +2,12 @@ import numpy as np
 from scipy.optimize import minimize
 
 
-#error function to minimise when trading into new portfolio
-def error(trades, old, new, trading_fee):
-	old = np.array(old)
-	new = np.array(new)
-	first_pass = np.min([np.zeros(trades.size), trades], axis=0)
-	second_pass = np.max([np.zeros(trades.size), trades], axis=0)
-
-	first_pass_fees = np.sum(np.abs(first_pass)) * trading_fee
-	second_pass_fees = np.sum(np.abs(second_pass)) * trading_fee
-
-	portfolio_value= 1 - first_pass_fees - (1 - first_pass_fees) * second_pass_fees
-
-	new_portfolio = old + first_pass
-	new_portfolio[0] += -np.sum(first_pass) * (1 - trading_fee)
-	new_portfolio[0] -= np.sum(second_pass)
-	new_portfolio +=  second_pass * (1 - trading_fee)
-
-	distance_to_line = np.sqrt(np.sum((new * np.sum(new * new_portfolio) / np.sum(new ** 2) - new_portfolio) ** 2))
-
-	return distance_to_line - portfolio_value
 
 class portfolioManager:
 	#n number of assets available for investment, assets is an array  of names for each available assets
 	def __init__(self, n, trading_fee =0):
-		self.portfolio = np.ones(n) / n
+		#self.portfolio = np.ones(n) / n
+		self.portfolio = np.zeros(n)
 		self.portfolios = [self.portfolio]
 		self.trading_fee = trading_fee
 		self.value = 1
@@ -35,26 +16,35 @@ class portfolioManager:
 		self.price_changes = []
 		self.update_times = []
 
-	def update(self, time, price_changes):
+	def update(self, time, price_changes, interest=0):
 		#keep track of the portfolio update time, might be worth checking that there are no 
 		self.update_times.append(time)
 		self.price_changes.append(price_changes)
 		self.prices.append(self.prices[-1] * price_changes)
-		self.value *= np.sum(np.array(price_changes) * self.portfolio)
-		
+		profit = (np.sum(np.array(price_changes) * self.portfolio) - np.sum(self.portfolio)) * self.value
+		self.value += profit
+
+
+
+		if np.sum(np.abs(self.portfolio)) > 0:
+			interest_cost = self.portfolio * interest
+			self.value -= np.sum(interest_cost)
+
+			self.portfolio *= price_changes
+			self.portfolio /= (np.sum(np.abs(self.portfolio)) / self.margin)
+
 		#pick next portfolio
 		target_portfolio = self.calculate_next_portfolio()
-
-		#trade = self.find_trade(target_portfolio)
-		trade = self.portfolio - target_portfolio
-		trade[0] = 0
+		
+		trade = target_portfolio - self.portfolio		
 
 		self.execute_trade(trade)
-		print(trade)
-
+		
 
 		#update data
 		self.values.append(self.value * self.fees(time))
+		
+		
 		self.portfolios.append(np.array(self.portfolio))
 
 
@@ -83,25 +73,23 @@ class portfolioManager:
 	#executes a trade and returns the loss fraction of the portfolio value post trade
 	#trade formatted as follows: negative values are moved form balance to quote, and then positive balance is moved from USD to quote
 	def execute_trade(self, trade):
-		first_pass = np.min([np.zeros(trade.size), trade], axis=0)
-		second_pass = np.max([np.zeros(trade.size), trade], axis=0)
 
-		new_portfolio = np.max([self.portfolio + first_pass, np.zeros(self.portfolio.size)], axis=0)
-		new_portfolio[0] += -np.sum(first_pass) * (1 - self.trading_fee)
-		new_portfolio[0] -= np.sum(second_pass)
-		c = 0
-		for i, v in enumerate(second_pass):
-			if new_portfolio[0] - c < v:
-				second_pass[i] = np.max([0, new_portfolio[0] - v])
-			c += v
-		new_portfolio +=  second_pass * (1 - self.trading_fee)
-		self.portfolio = new_portfolio / np.sum(np.abs(new_portfolio))
+		to_sell = np.min([trade, np.zeros(trade.size)], axis=0)
+		value_sold = - (1 - self.trading_fee) * np.sum(to_sell)
+		self.portfolio += to_sell
 
-		first_pass_fees = np.sum(np.abs(first_pass)) * self.trading_fee
-		second_pass_fees = np.sum(np.abs(second_pass)) * self.trading_fee
+		to_buy = np.max([trade, np.zeros(trade.size)], axis=0) * (1 - self.trading_fee) ** 2
+		self.portfolio += to_buy
 
+		#cost of operation
+		
+		cost = value_sold / (1 - self.trading_fee) * self.trading_fee + np.sum(to_buy) / (1 - self.trading_fee) ** 2 * self.trading_fee
+		self.value -= cost * self.value
 
-		self.value *= (1 - first_pass_fees) * (1 - second_pass_fees)
+		self.portfolio /= np.sum(np.abs(self.portfolio)) / self.margin
+		
+		
+
 
 
 
@@ -118,7 +106,7 @@ class PAMRPortfolioManager(portfolioManager):
 
 	def calculate_next_portfolio(self):
 		price_changes = np.array(self.price_changes[-1])
-
+		
 		x_bar = np.mean(price_changes)
 		distance = np.sum((x_bar * np.ones(price_changes.size) - price_changes) ** 2)
 		if self.c > 0:
@@ -126,7 +114,10 @@ class PAMRPortfolioManager(portfolioManager):
 		else:
 			tau = 2**10
 			self.portfolio = np.zeros(self.portfolio.size)
-
+		#if the portfolio is empty, pick a new one
+		if (self.portfolio == np.zeros(self.portfolio.size)).all():
+			tau = 1
+		
 		new_weights = self.portfolio - tau * (price_changes - x_bar * np.ones(price_changes.size))
 		new_weights = self.normalise(new_weights)
 
@@ -135,18 +126,36 @@ class PAMRPortfolioManager(portfolioManager):
 	
 	def normalise(self, new_weights):
 		if self.margin == 0:
-			result = minimize(lambda x: np.sum((x - new_weights) ** 2), np.array(new_weights), jac=lambda x: 2 * (x - new_weights), bounds = [(0, np.infty) for _ in new_weights], constraints=[{'type': 'eq', 'fun': lambda x: np.sum(x) - 1}])
+			result = minimize(
+								lambda x: np.sum((x - new_weights) ** 2), 
+								np.array(new_weights), 
+								jac=lambda x: 2 * (x - new_weights), 
+								bounds = [(0, np.infty) for _ in new_weights], 
+								constraints=[{'type': 'eq', 'fun': lambda x: np.sum(x) - 1}]
+							)
 			minimum = result.x
 			return minimum / np.sum(minimum)
 		else:
-			result = minimize(lambda x: np.sum((x - new_weights) ** 2), np.array(new_weights), jac=lambda x: 2 * (x - new_weights), constraints=[{'type': 'ineq', 'fun': lambda x: self.margin - np.sum(np.abs(x))}])
+			result = minimize(
+								lambda x: np.sum((x - new_weights) ** 2), 
+								np.array([1 for _ in range(self.portfolio.size)]), 
+								jac=lambda x: 2 * (x - new_weights), 
+								constraints=[
+												{'type': 'ineq', 'fun': lambda x: self.margin - np.sum(np.abs(x))}, 
+											]
+							
+							)
+			
+			#print(result)
 			minimum = result.x
-			return minimum / np.sum(np.abs(minimum)) * self.margin
+
+			return self.margin * minimum / np.sum(np.abs(minimum))
 
 
 
 	def loss(self, price_changes):
-		return np.max([0, np.sum(self.portfolio * price_changes) - self.epsilon])
+		
+		return np.max([0, (np.sum(self.portfolio * price_changes - self.portfolio) / self.margin) + 1 - self.epsilon])
 
 def test_trading_calculation():
 	pm = portfolioManager(3, 0.1)
