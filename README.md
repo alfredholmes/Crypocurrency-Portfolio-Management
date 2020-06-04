@@ -1,5 +1,5 @@
-# BinancePAMR
-Implementation of PAMR portfolio management for binance cryptocurrency assets.
+# Automated Portfolio Management Analysis for Binance Cryptocurrency Exchange
+Implementation of PAMR and MAMR portfolio management algorithms for analysis and online portfolio management of cryptocurrency assets.
 
 ### Performance - with the trading fee of 0.1%
 Parameters fitted to maximise the mean daily return, algorithm runs every 30 minutes

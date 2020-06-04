@@ -5,17 +5,19 @@ from scipy.optimize import minimize
 
 class portfolioManager:
 	#n number of assets available for investment, assets is an array  of names for each available assets
-	def __init__(self, n, trading_fee =0):
+	def __init__(self, n, trading_fee =0, margin=1):
 		#self.portfolio = np.ones(n) / n
 		self.portfolio = np.zeros(n)
 		self.portfolios = [self.portfolio]
 		self.trading_fee = trading_fee
+		self.margin = 1
 		self.value = 1
 		self.values = [1]
 		self.prices = [np.ones(n)]
 		self.price_changes = []
 		self.update_times = []
 
+	#function to update the portfolio, interest is the interest to be paid for holding borrowed assets in futures markets for example
 	def update(self, time, price_changes, interest=0):
 		#keep track of the portfolio update time, might be worth checking that there are no 
 		self.update_times.append(time)
@@ -28,10 +30,10 @@ class portfolioManager:
 
 		if np.sum(np.abs(self.portfolio)) > 0:
 			interest_cost = self.portfolio * interest
-			self.value -= np.sum(interest_cost)
+			self.value -= np.sum(interest_cost) * self.value
 
 			self.portfolio *= price_changes
-			self.portfolio /= (np.sum(np.abs(self.portfolio)) / self.margin)
+			self.portfolio /= 1 if np.sum(np.abs(self.portfolio)) == 0 else (np.sum(np.abs(self.portfolio)) / self.margin)
 
 		#pick next portfolio
 		target_portfolio = self.calculate_next_portfolio()
@@ -86,45 +88,13 @@ class portfolioManager:
 		cost = value_sold / (1 - self.trading_fee) * self.trading_fee + np.sum(to_buy) / (1 - self.trading_fee) ** 2 * self.trading_fee
 		self.value -= cost * self.value
 
-		self.portfolio /= np.sum(np.abs(self.portfolio)) / self.margin
+		self.portfolio /=1 if np.sum(np.abs(self.portfolio)) == 0 else (np.sum(np.abs(self.portfolio)) / self.margin)
 		
 		
-
-
-
-
-	#for base class the strategy is buy and hold
-	def calculate_next_portfolio(self):
-		return np.array(self.portfolio)
-
-class PAMRPortfolioManager(portfolioManager):
-	def __init__(self, n, epsilon, c, trading_fee =0, margin=0):
-		super().__init__(n, trading_fee)
-		self.epsilon = epsilon
-		self.c = c
-		self.margin = margin
-
-	def calculate_next_portfolio(self):
-		price_changes = np.array(self.price_changes[-1])
-		
-		x_bar = np.mean(price_changes)
-		distance = np.sum((x_bar * np.ones(price_changes.size) - price_changes) ** 2)
-		if self.c > 0:
-			tau = self.loss(price_changes) / (distance + 1 / (2*self.c))
-		else:
-			tau = 2**10
-			self.portfolio = np.zeros(self.portfolio.size)
-		#if the portfolio is empty, pick a new one
-		if (self.portfolio == np.zeros(self.portfolio.size)).all():
-			tau = 1
-		
-		new_weights = self.portfolio - tau * (price_changes - x_bar * np.ones(price_changes.size))
-		new_weights = self.normalise(new_weights)
-
-		return new_weights
-
-	
+	#function to find a valid portfolio with minimal distance to the suggested portfolio
 	def normalise(self, new_weights):
+		if np.sum(np.abs(new_weights)) == 0:
+			return new_weights
 		if self.margin == 0:
 			result = minimize(
 								lambda x: np.sum((x - new_weights) ** 2), 
@@ -149,27 +119,82 @@ class PAMRPortfolioManager(portfolioManager):
 			#print(result)
 			minimum = result.x
 
+			
+
 			return self.margin * minimum / np.sum(np.abs(minimum))
+
+
+	#for base class the strategy is buy and hold
+	def calculate_next_portfolio(self):
+		return np.array(self.portfolio)
+
+class PAMRPortfolioManager(portfolioManager):
+	def __init__(self, n, epsilon, c, trading_fee =0, margin=0):
+		super().__init__(n, trading_fee)
+		self.epsilon, self.c, self.margin = epsilon, c, margin
+
+	def calculate_next_portfolio(self):
+		price_changes = np.array(self.price_changes[-1])
+		
+		x_bar = np.mean(price_changes)
+		distance = np.sum((x_bar * np.ones(price_changes.size) - price_changes) ** 2)
+		if self.c > 0:
+			tau = self.loss(price_changes) / (distance + 1 / (2*self.c))
+		else:
+			tau = 2**10
+			self.portfolio = np.zeros(self.portfolio.size)
+		#if the portfolio is empty, pick a new one
+		if (self.portfolio == np.zeros(self.portfolio.size)).all():
+			tau = 1
+		
+		new_weights = self.portfolio - tau * (price_changes - x_bar * np.ones(price_changes.size))
+		new_weights = self.normalise(new_weights)
+
+		return new_weights
+
+	
+
 
 
 
 	def loss(self, price_changes):
-		
 		return np.max([0, (np.sum(self.portfolio * price_changes - self.portfolio) / self.margin) + 1 - self.epsilon])
 
-def test_trading_calculation():
-	pm = portfolioManager(3, 0.1)
-	pm.find_trade(pm.portfolio, [0, 0, 1])
-	print(pm.value)
 
-def test_PAMR():
-	from matplotlib import pyplot as plt
-	pm = PAMRPortfolioManager(3, 0.5, 200, 0.001)
-	for i in range(100):
-		pm.update(i, np.random.rand(3) * 1.1)
+class MAMRPortfolioManager(portfolioManager):
+	def __init__(self, n, epsilon, c_1, c_2, trading_fee=0, margin=1, omega=5):
+		super().__init__(n, trading_fee, margin)
+		self.epsilon, self.c_1, self.c_2, self.omega = epsilon, c_1, c_2, omega
+		self.ma = np.ones(n)
 
-	plt.plot(pm.values)
-	plt.show()
+	def calculate_next_portfolio(self):
+		price_changes = np.array(self.price_changes[-1])
+		self.ma = np.mean(self.price_changes[-self.omega:], axis=0)
+		x_bar = np.mean(self.ma)
+		alpha = 0 if np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2) == 0 else self.loss(self.ma) / np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2)
+		#print(self.loss(self.ma) / np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2))
+		new_weights = self.portfolio + alpha * (self.ma - x_bar * np.ones(self.ma.size))
+		new_weights = self.normalise(new_weights)
+		
+		return new_weights
+
+
+	def loss(self, x):
+
+		
+		if np.sum(np.abs(self.portfolio)) == 0:
+			return 1
+		gain = np.sum(self.portfolio * x - self.portfolio)
+
+		if np.abs(gain) >= self.epsilon / self.c_1:
+			return 0
+		elif gain <= 0:
+			return -gain
+		elif gain <= self.epsilon / self.c_2:
+			return self.epsilon / self.c_2 - gain
+		else:
+			return self.epsilon / self.c_1 - gain
+
 
 if __name__ == '__main__':
 	#test_trading_calculation()
