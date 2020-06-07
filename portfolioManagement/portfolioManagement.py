@@ -6,7 +6,7 @@ from scipy.optimize import minimize
 class portfolioManager:
 	#n number of assets available for investment, assets is an array  of names for each available assets
 	def __init__(self, n, trading_fee =0, margin=1):
-		#self.portfolio = np.ones(n) / n
+		self.portfolio = np.ones(n) / n
 		self.portfolio = np.zeros(n)
 		self.portfolios = [self.portfolio]
 		self.trading_fee = trading_fee
@@ -106,18 +106,18 @@ class portfolioManager:
 			minimum = result.x
 			return minimum / np.sum(minimum)
 		else:
-			result = minimize(
-								lambda x: np.sum((x - new_weights) ** 2), 
-								np.array([1 for _ in range(self.portfolio.size)]), 
-								jac=lambda x: 2 * (x - new_weights), 
-								constraints=[
-												{'type': 'ineq', 'fun': lambda x: self.margin - np.sum(np.abs(x))}, 
-											]
-							
-							)
+			#result = minimize(
+			#					lambda x: np.sum((x - new_weights) ** 2), 
+			#					np.array([1 for _ in range(self.portfolio.size)]), 
+			#					jac=lambda x: 2 * (x - new_weights), 
+			#					constraints=[
+			#									#{'type': 'ineq', 'fun': lambda x: self.margin - np.sum(np.abs(x))}, 
+			#								]
+			#				
+			#				)
 			
 			#print(result)
-			minimum = result.x
+			minimum = new_weights
 
 			
 
@@ -132,33 +132,35 @@ class PAMRPortfolioManager(portfolioManager):
 	def __init__(self, n, epsilon, c, trading_fee =0, margin=0):
 		super().__init__(n, trading_fee)
 		self.epsilon, self.c, self.margin = epsilon, c, margin
+		import itertools
+		self.combinations = list(set([comb for comb in itertools.combinations([1, -1] * self.portfolio.size, self.portfolio.size)]))
 
 	def calculate_next_portfolio(self):
 		price_changes = np.array(self.price_changes[-1])
 		
-		x_bar = np.mean(price_changes)
-		distance = np.sum((x_bar * np.ones(price_changes.size) - price_changes) ** 2)
-		if self.c > 0:
-			tau = self.loss(price_changes) / (distance + 1 / (2*self.c))
+		if self.loss(self.portfolio, price_changes) == 0:
+			new_weights = best_result
 		else:
-			tau = 2**10
-			self.portfolio = np.zeros(self.portfolio.size)
-		#if the portfolio is empty, pick a new one
-		if (self.portfolio == np.zeros(self.portfolio.size)).all():
-			tau = 1
-		
-		new_weights = self.portfolio - tau * (price_changes - x_bar * np.ones(price_changes.size))
-		new_weights = self.normalise(new_weights)
-
-		return new_weights
-
-	
+			results = []
+			errors = []
+			for i, c in enumerate(self.combinations):
+				e = np.array(c) / self.portfolio.size
 
 
 
 
-	def loss(self, price_changes):
-		return np.max([0, (np.sum(self.portfolio * price_changes - self.portfolio) / self.margin) + 1 - self.epsilon])
+				results.append(result)
+				errors.append(error)
+
+			min_error = np.min(errors)
+			best_result = results[errors.index(min_error)]
+
+			new_weights = best_result
+
+		return self.normalise(new_weights)
+
+	def loss(self, b, price_changes):
+		return np.max([0, (np.sum(b * price_changes - b) / self.margin) + 1 - self.epsilon])
 
 
 class MAMRPortfolioManager(portfolioManager):
@@ -171,7 +173,7 @@ class MAMRPortfolioManager(portfolioManager):
 		price_changes = np.array(self.price_changes[-1])
 		self.ma = np.mean(self.price_changes[-self.omega:], axis=0)
 		x_bar = np.mean(self.ma)
-		alpha = 0 if np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2) == 0 else self.loss(self.ma) / np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2)
+		alpha = 0 if np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2) == 0 else self.loss(self.portfolio, self.ma) / np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2)
 		#print(self.loss(self.ma) / np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2))
 		new_weights = self.portfolio + alpha * (self.ma - x_bar * np.ones(self.ma.size))
 		new_weights = self.normalise(new_weights)
@@ -179,12 +181,12 @@ class MAMRPortfolioManager(portfolioManager):
 		return new_weights
 
 
-	def loss(self, x):
+	def loss(self, b, x):
 
 		
-		if np.sum(np.abs(self.portfolio)) == 0:
+		if np.sum(np.abs(b)) == 0:
 			return 1
-		gain = np.sum(self.portfolio * x - self.portfolio)
+		gain = np.sum(b * x - b)
 
 		if np.abs(gain) >= self.epsilon / self.c_1:
 			return 0

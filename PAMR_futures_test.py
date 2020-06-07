@@ -24,7 +24,7 @@ def main():
 			price_changes.append(prices[-1] / prices[-2])
 			times.append(candle['open_time'])
 
-	manager = PAMRPortfolioManager(len(CURRENCIES), 0.69, 11, 0.0004, 1)
+	manager = PAMRPortfolioManager(len(CURRENCIES), 0, 200, 0.0000, 1)
 	for i, (change, time, funding_rate) in enumerate(zip(price_changes, times, funding_rates)):
 		print((times[-1] - time) / (1000 * 60 * 30))
 		
