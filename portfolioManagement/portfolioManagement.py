@@ -5,9 +5,9 @@ from scipy.optimize import minimize
 
 class portfolioManager:
 	#n number of assets available for investment, assets is an array  of names for each available assets
-	def __init__(self, n, trading_fee =0, margin=1):
-		self.portfolio = np.ones(n) / n
+	def __init__(self, n, trading_fee=0):
 		self.portfolio = np.zeros(n)
+		self.portfolio[0] = 1
 		self.portfolios = [self.portfolio]
 		self.trading_fee = trading_fee
 		self.margin = 1
@@ -23,6 +23,7 @@ class portfolioManager:
 		self.update_times.append(time)
 		self.price_changes.append(price_changes)
 		self.prices.append(self.prices[-1] * price_changes)
+		
 		profit = (np.sum(np.array(price_changes) * self.portfolio) - np.sum(self.portfolio)) * self.value
 		self.value += profit
 
@@ -39,6 +40,8 @@ class portfolioManager:
 		target_portfolio = self.calculate_next_portfolio()
 		
 		trade = target_portfolio - self.portfolio		
+
+
 
 		self.execute_trade(trade)
 		
@@ -86,42 +89,36 @@ class portfolioManager:
 		#cost of operation
 		
 		cost = value_sold / (1 - self.trading_fee) * self.trading_fee + np.sum(to_buy) / (1 - self.trading_fee) ** 2 * self.trading_fee
+		
+
 		self.value -= cost * self.value
 
-		self.portfolio /=1 if np.sum(np.abs(self.portfolio)) == 0 else (np.sum(np.abs(self.portfolio)) / self.margin)
+
+
+		self.portfolio /= np.sum(np.abs(self.portfolio))
 		
 		
 	#function to find a valid portfolio with minimal distance to the suggested portfolio
 	def normalise(self, new_weights):
 		if np.sum(np.abs(new_weights)) == 0:
 			return new_weights
-		if self.margin == 0:
-			result = minimize(
-								lambda x: np.sum((x - new_weights) ** 2), 
-								np.array(new_weights), 
-								jac=lambda x: 2 * (x - new_weights), 
-								bounds = [(0, np.infty) for _ in new_weights], 
-								constraints=[{'type': 'eq', 'fun': lambda x: np.sum(x) - 1}]
-							)
-			minimum = result.x
-			return minimum / np.sum(minimum)
-		else:
-			#result = minimize(
-			#					lambda x: np.sum((x - new_weights) ** 2), 
-			#					np.array([1 for _ in range(self.portfolio.size)]), 
-			#					jac=lambda x: 2 * (x - new_weights), 
-			#					constraints=[
-			#									#{'type': 'ineq', 'fun': lambda x: self.margin - np.sum(np.abs(x))}, 
-			#								]
-			#				
-			#				)
-			
-			#print(result)
-			minimum = new_weights
 
-			
+		
+		
+		result = minimize(
+							lambda x: np.sum((x - new_weights) ** 2), 
+							np.array(new_weights), 
+							jac=lambda x: 2 * (x - new_weights), 
+							bounds = [(0, np.infty) for _ in new_weights], 
+							constraints=[{'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1}]
+						)
+		minimum = result.x
+		
 
-			return self.margin * minimum / np.sum(np.abs(minimum))
+
+
+		#return np.max([new_weights, np.zeros(new_weights.size)], axis=0) / np.sum(np.max([new_weights, np.zeros(new_weights.size)], axis=0))
+		return minimum / np.sum(np.abs(minimum))
 
 
 	#for base class the strategy is buy and hold
@@ -129,43 +126,24 @@ class portfolioManager:
 		return np.array(self.portfolio)
 
 class PAMRPortfolioManager(portfolioManager):
-	def __init__(self, n, epsilon, c, trading_fee =0, margin=0):
+	def __init__(self, n, epsilon, c, trading_fee =0):
 		super().__init__(n, trading_fee)
-		self.epsilon, self.c, self.margin = epsilon, c, margin
-		import itertools
-		self.combinations = list(set([comb for comb in itertools.combinations([1, -1] * self.portfolio.size, self.portfolio.size)]))
+		self.epsilon, self.c= epsilon, c
+
 
 	def calculate_next_portfolio(self):
 		price_changes = np.array(self.price_changes[-1])
-		
-		if self.loss(self.portfolio, price_changes) == 0:
-			new_weights = best_result
-		else:
-			results = []
-			errors = []
-			for i, c in enumerate(self.combinations):
-				e = np.array(c) / self.portfolio.size
-
-
-
-
-				results.append(result)
-				errors.append(error)
-
-			min_error = np.min(errors)
-			best_result = results[errors.index(min_error)]
-
-			new_weights = best_result
-
+		tau = self.loss(self.portfolio, price_changes) / (1 / (2 * self.c) + np.sum((self.portfolio - np.mean(self.portfolio)) ** 2))
+		new_weights = self.portfolio - tau * (self.portfolio - np.mean(self.portfolio))
 		return self.normalise(new_weights)
 
 	def loss(self, b, price_changes):
-		return np.max([0, (np.sum(b * price_changes - b) / self.margin) + 1 - self.epsilon])
+		return np.max([0, np.sum(b * price_changes) - self.epsilon])
 
 
 class MAMRPortfolioManager(portfolioManager):
-	def __init__(self, n, epsilon, c_1, c_2, trading_fee=0, margin=1, omega=5):
-		super().__init__(n, trading_fee, margin)
+	def __init__(self, n, epsilon, c_1, c_2, trading_fee=0, omega=5):
+		super().__init__(n, trading_fee)
 		self.epsilon, self.c_1, self.c_2, self.omega = epsilon, c_1, c_2, omega
 		self.ma = np.ones(n)
 

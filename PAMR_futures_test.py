@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 
 import numpy as np
 
-DATABASE = 'data/futures_candles_30m.db'
+DATABASE = 'data/candles_1d.db'
 CURRENCIES = ['BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'XRP', 'BCH', 'ADA', 'XMR']
 
 def main():
@@ -16,15 +16,16 @@ def main():
 	funding_rates = []
 
 	for candle in candleLoader(DATABASE):
-		funding_rates.append([candle[currency + 'USDT_funding_rate'] for currency in CURRENCIES])
-		prices.append(np.array([candle[currency + 'USDT_open'] for currency in CURRENCIES]))
+		#funding_rates.append([candle[currency + 'USDT_funding_rate'] for currency in CURRENCIES])
+		print(candle)
+		prices.append(np.array([candle[currency + 'USDT_OPEN'] for currency in CURRENCIES]))
 		if len(prices) == 1:
 			continue
 		else:
 			price_changes.append(prices[-1] / prices[-2])
 			times.append(candle['open_time'])
 
-	manager = PAMRPortfolioManager(len(CURRENCIES), 0, 200, 0.0000, 1)
+	manager = PAMRPortfolioManager(len(CURRENCIES), 0, 200, 0.0000, 0)
 	for i, (change, time, funding_rate) in enumerate(zip(price_changes, times, funding_rates)):
 		print((times[-1] - time) / (1000 * 60 * 30))
 		

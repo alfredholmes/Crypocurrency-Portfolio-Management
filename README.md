@@ -7,17 +7,21 @@ Parameters fitted to maximise the mean daily return, algorithm runs every 30 min
 
 Current portfolio consists of 8 large market cap coins.
 
-### Portfolio through time 
-![Portfolio through time](https://raw.githubusercontent.com/alfredholmes/BinancePAMR/master/results/portfolio-through-time.png)
+### MAMR Daily
+![Portfolio through time](https://raw.githubusercontent.com/alfredholmes/BinancePAMR/master/results/Figure_0.png)
 
 ### Requirements
 	pip3 install requests numpy scipy  
 
-### To run PAMR simulation
+### To run PAMR/MAMR simulations
 	git clone https://github.com/alfredholmes/binancePAMR.git
 	cd binancePAMR
-	python3 data/get_candles.py 
+	python3 data/get_candles_spot.py 
 	python3 analysis/PAMR.py
+	python3 analysis/MAMR.py
+
+currently MAMR outperforms PAMR.
+
 
 ### References / useful papers
 #### Passive aggressive mean reversion 
