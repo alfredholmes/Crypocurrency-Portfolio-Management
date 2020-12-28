@@ -16,4 +16,4 @@ def prices(symbols):
 		if book['symbol'] in symbols:
 			data[book['symbol']] = [book['bidPrice'], book['askPrice']]
 
-	return relevant
+	return data

@@ -1,5 +1,6 @@
 import requests, json, hashlib, hmac, datetime, urllib 
-
+import market
+import numpy as np
 
 class account:
 	def __init__(self, api_key, secret_key):
@@ -8,7 +9,7 @@ class account:
 
 
 	def generate_signature(self, params):
-		return hmac.new(self.secret_key.encode('utf-8'), urllib.parse.urlencode(params.encode('utf-8')), hashlib.sha256).hexdigest()
+		return hmac.new(self.secret_key.encode('utf-8'), urllib.parse.urlencode(params).encode('utf-8'), hashlib.sha256).hexdigest()
 
 
 	def get_account_balance(self):
@@ -31,6 +32,13 @@ class account:
 
 		self.balances = {asset['asset'] : asset['free'] for asset in account['balances'] if float(asset['free']) != 0}
 		return self.balances
+
+	def get_portfolio_weighted(self, assets):
+		self.get_account_balance()
+		prices = market.get_prices([a + 'USDT' for a in assets[1:]])
+		#calculate USDT value
+
+
 
 	def market_order(market, amount):
 		pass
