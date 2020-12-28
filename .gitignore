@@ -1,7 +1,7 @@
 #Ignore Filed containing API keys
 
 keys*
-
+*.pkl
 
 #Ignoring CSVs and Database files which store trading data  
 *.csv
