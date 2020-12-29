@@ -1,12 +1,12 @@
-# Automated Portfolio Management Analysis for Binance Cryptocurrency Exchange
+# Automated Portfolio Management and Algorithm Analysis for Binance Cryptocurrency Exchange
 Implementation of PAMR and MAMR portfolio management algorithms for online portfolio management and analysis of cryptocurrency assets.
 
-### MAMR 12 hour
+### MAMR 12 hour - 0.1% Trading Fee
 ![MAMR 12 hour](https://raw.githubusercontent.com/alfredholmes/BinancePAMR/master/results/Figure_0.png)
 #### Example Portfolio Through Time
 ![Portfolio through time](https://raw.githubusercontent.com/alfredholmes/BinancePAMR/master/results/example_portfolio.png)
 
-### Performance - with the trading fee of 0.1%
+### PAMR 30 minute Performance - with the trading fee of 0.1%
 Parameters fitted to maximise the mean daily return, algorithm runs every 30 minutes
 ![PAMR-2 Performance](https://raw.githubusercontent.com/alfredholmes/BinancePAMR/master/results/PAMR-BTC-comparison.png)
 
