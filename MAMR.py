@@ -7,7 +7,7 @@ import numpy as np
 
 #need to run data/get_candles_spot.py
 DATABASE = 'data/candles_12h.db'
-CURRENCIES = ['ETH', 'EOS', 'LTC', 'BNB', 'XRP', 'BCH', 'ADA', 'XMR']
+CURRENCIES = ['BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'XRP', 'BCH', 'ADA', 'XMR']
 #CURRENCIES = ['BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'BCH', 'ADA']
 
 def main():
@@ -45,14 +45,14 @@ def main():
 	plt.plot([datetime.datetime.fromtimestamp(time / 1000) for time in times], [p[1]/prices[0][1] for p in prices[1:]], label='BTC Return')
 	plt.yscale('log')
 	plt.ylabel('Return')
-	plt.title('MAMR Daily Updates, 0.001 Transaction Fee')
+	plt.title('MAMR 12 hour updates, 0.001 Transaction Fee')
 	plt.legend()
 
 
 	plt.figure(1)
 
 	for i, currency in enumerate(['USDT'] + CURRENCIES):
-		plt.plot([p[i] for p in manager.portfolios], label=currency)
+		plt.plot([datetime.datetime.fromtimestamp(time / 1000) for time in times], [p[i] for p in manager.portfolios[1:]], label=currency)
 	plt.legend()
 
 	plt.show()
