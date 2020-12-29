@@ -7,21 +7,25 @@ Parameters fitted to maximise the mean daily return, algorithm runs every 30 min
 
 Current portfolio consists of 8 large market cap coins.
 
-### MAMR Daily
-![Portfolio through time](https://raw.githubusercontent.com/alfredholmes/BinancePAMR/master/results/Figure_0.png)
+### MAMR 12 hour
+![MAMR 12 hour](https://raw.githubusercontent.com/alfredholmes/BinancePAMR/master/results/Figure_0.png)
+#### Example Portfolio Through Time
+![Portfolio through time](https://raw.githubusercontent.com/alfredholmes/BinancePAMR/master/results/example_portfolio.png)
 
 ### Requirements
 	pip3 install requests numpy scipy  
+
+### Binance Trading Bot
+Create a file keys.py and assign the api key and secret key from a binance account to the variables api and secret respectivley in the keys file. When the bot runs it gets the spot portfolio of the tracked currencies (currencies in the CURRENCIES variable) and runs the MAMR algorithm to calculate the next portfolio and then makes the trade (not currently implemented) in a way that minimises the trade volume to reduce fees. The state, allong with the market data is then pickled which is opened on the next run. The parameters in the implementation expect the script to be run every 12 hours. 
 
 ### To run PAMR/MAMR simulations
 	git clone https://github.com/alfredholmes/binancePAMR.git
 	cd binancePAMR
 	python3 data/get_candles_spot.py 
-	python3 analysis/PAMR.py
-	python3 analysis/MAMR.py
+	python3 PAMR.py
+	python3 MAMR.py
 
-currently MAMR outperforms PAMR.
-
+In general MAMR outperforms PAMR for cryptocurrency portfolios.
 
 ### References / useful papers
 #### Passive aggressive mean reversion 

@@ -28,7 +28,7 @@ def main():
 
 	#manager = MAMRPortfolioManager(len(CURRENCIES) + 1, 11.75, 371, 995, 0.001, 23)
 	#manager = MAMRPortfolioManager(len(CURRENCIES) + 1, 4.105, 9.5, 1000, 0.00075, 26)
-	manager = MAMRPortfolioManager(len(CURRENCIES) + 1, 4.105, 9.5, 1000, 0.0, 26)
+	manager = MAMRPortfolioManager(len(CURRENCIES) + 1, 4.105, 9.5, 1000, 0.001, 26)
 
 	for change, time in zip(price_changes, times):
 		manager.update(time, change)
@@ -53,7 +53,6 @@ def main():
 
 	for i, currency in enumerate(['USDT'] + CURRENCIES):
 		plt.plot([p[i] for p in manager.portfolios], label=currency)
-		break
 	plt.legend()
 
 	plt.show()
