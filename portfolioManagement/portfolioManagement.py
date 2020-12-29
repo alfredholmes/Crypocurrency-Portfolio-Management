@@ -6,7 +6,9 @@ from scipy.optimize import minimize
 class portfolioManager:
 	#n number of assets available for investment, assets is an array  of names for each available assets
 	def __init__(self, n, trading_fee=0):
+		#self.portfolio = np.ones(n)/n
 		self.portfolio = np.zeros(n)
+		
 		self.portfolio[0] = 1
 		self.portfolios = [self.portfolio]
 		self.trading_fee = trading_fee
@@ -40,8 +42,6 @@ class portfolioManager:
 		target_portfolio = self.calculate_next_portfolio()
 		
 		trade = target_portfolio - self.portfolio		
-
-
 
 		self.execute_trade(trade)
 		
@@ -151,6 +151,8 @@ class MAMRPortfolioManager(portfolioManager):
 		price_changes = np.array(self.price_changes[-1])
 		self.ma = np.mean(self.price_changes[-self.omega:], axis=0)
 		x_bar = np.mean(self.ma)
+
+
 		alpha = 0 if np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2) == 0 else self.loss(self.portfolio, self.ma) / np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2)
 		#print(self.loss(self.ma) / np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2))
 		new_weights = self.portfolio + alpha * (self.ma - x_bar * np.ones(self.ma.size))
@@ -164,7 +166,8 @@ class MAMRPortfolioManager(portfolioManager):
 		
 		if np.sum(np.abs(b)) == 0:
 			return 1
-		gain = np.sum(b * x - b)
+		gain = np.sum(b * x) - 1
+	
 
 		if np.abs(gain) >= self.epsilon / self.c_1:
 			return 0

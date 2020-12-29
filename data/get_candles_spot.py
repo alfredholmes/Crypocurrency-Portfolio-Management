@@ -10,7 +10,7 @@ import requests, json, sqlite3, datetime
 
 #MARKETS = ['BTCUSDT', 'ETHBTC', 'BNBBTC', 'EOSBTC']
 #MARKETS = ['BTCUSDT', 'ETHBTC', 'EOSBTC', 'LTCBTC', 'BNBBTC', 'XRPBTC', 'BCHBTC', 'ADABTC', 'XMRBTC', 'FTTBTC']
-MARKETS = ['BTCUSDT', 'ETHUSDT', 'EOSUSDT', 'LTCBUSDT', 'BNBUSDT', 'XRPUSDT', 'BCHUSDT', 'ADAUSDT', 'XMRUSDT', 'FTTUSDT']
+MARKETS = ['BTCUSDT', 'ETHUSDT', 'EOSUSDT', 'LTCUSDT', 'BNBUSDT', 'XRPUSDT', 'BCHUSDT', 'ADAUSDT', 'XMRUSDT', 'FTTUSDT']
 START_DATE = datetime.datetime(year=2017, month=11, day=1)
 N = 40000
 INTERVAL = '12h'
@@ -84,7 +84,6 @@ def main():
 				'limit': LIMIT
 			}
 			r = requests.get('https://api.binance.com/api/v3/klines', params=params)
-
 			candles = json.loads(r.text)
 			for candle in candles:
 				if candle[0] > now:

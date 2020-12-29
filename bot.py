@@ -20,7 +20,7 @@ RISKLESS = 'USDT'
 DATABASE = 'data/candles_12h.db'
 
 class binanceBot:
-	def __init__(self, api, secret, saved=None, n=12):
+	def __init__(self, api, secret, saved=None, n=26):
 		self.account = account(api, secret)
 
 		if saved is not None:
@@ -37,10 +37,10 @@ class binanceBot:
 				pass
 
 		#get the portfolio...
-		self.manager = MAMRPortfolioManager(len(CURRENCIES) + len(QUOTES) + 1, 8.6, 800, 100, 0.0, n)
+		self.manager = MAMRPortfolioManager(len(CURRENCIES) + len(QUOTES) + 1, 4.105, 9.5, 1000, 0.0, n)
 
 		from data.get_candles_spot import main as get_candles
-		#get_candles()
+		get_candles()
 
 		
 
