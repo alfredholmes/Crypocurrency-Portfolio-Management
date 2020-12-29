@@ -1,6 +1,6 @@
-import requests, json, hashlib, hmac, datetime, urllib 
-import market
+import requests, json, hashlib, hmac, datetime, urllib
 import numpy as np
+import binance.market as market
 
 class account:
 	def __init__(self, api_key, secret_key):
@@ -30,13 +30,16 @@ class account:
 
 		account = json.loads(r.text)
 
-		self.balances = {asset['asset'] : asset['free'] for asset in account['balances'] if float(asset['free']) != 0}
+
+		self.balances = {asset['asset'] : float(asset['free']) for asset in account['balances'] if float(asset['free']) != 0}
 		return self.balances
 
 	def get_portfolio_weighted(self, assets):
 		self.get_account_balance()
-		prices = market.get_prices([a + 'USDT' for a in assets[1:]])
-		#calculate USDT value
+		prices = np.array([1] + [np.mean(market.prices([a + 'USDT' for a in assets[1:]])[b + 'USDT']) for b in assets[1:]])
+		account = np.array([self.balances[a] if a in self.balances else 0.0 for a in assets])
+
+		return account * np.array(prices) / np.sum(account * np.array(prices))
 
 
 

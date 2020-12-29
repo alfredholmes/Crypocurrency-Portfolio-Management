@@ -1,10 +1,10 @@
 from binance.account import account
 import binance.market as market
-
-
+from data.candles import candleLoader
 from portfolioManagement.portfolioManagement import MAMRPortfolioManager
 import pickle
 
+import datetime
 import numpy as np
 
 MAMR_MGR = 'data.pkl'
@@ -17,20 +17,30 @@ QUOTES = ['BTC', 'BNB']
 RISKLESS = 'USDT'
 
 
-DATABASE = 'data/candles_1d.db'
+DATABASE = 'data/candles_12h.db'
 
 class binanceBot:
-	def __init__(self, saved=None, n=12):
+	def __init__(self, api, secret, saved=None, n=12):
+		self.account = account(api, secret)
+
 		if saved is not None:
-			with open(saved, 'rb') as file:
-				self = pickle.load(file)
-				return
+			try:
+				with open(saved, 'rb') as file:
+					loaded = pickle.load(file)
+					self.manager = loaded.manager
+					self.prices = loaded.prices
+					self.returns = loaded.returns
+					self.update_times = loaded.update_times
+					self.portfolio = loaded.portfolio
+					return
+			except FileNotFoundError:
+				pass
 
 		#get the portfolio...
-		self.manager = MAMRPortfolioManager(len(CURRENCIES) + len(QUOTES) + 1, 8.6, 800, 100, 0.001, n)
+		self.manager = MAMRPortfolioManager(len(CURRENCIES) + len(QUOTES) + 1, 8.6, 800, 100, 0.0, n)
 
 		from data.get_candles_spot import main as get_candles
-		get_candles()
+		#get_candles()
 
 		
 
@@ -40,7 +50,7 @@ class binanceBot:
 		
 		for candle in candleLoader(DATABASE):
 			#consider markets trading against BTC, so we need to invert the USDT price
-			self.prices.append(np.array([1 / candle['BTCUSDT_OPEN'], 1] + [candle[currency + 'BTC_OPEN'] for currency in ['BNB'] + CURRENCIES]))
+			self.prices.append(np.array([1] + [candle[currency + 'USDT_OPEN'] for currency in QUOTES + CURRENCIES]))
 			if len(self.prices) == 1:
 				continue
 			else:
@@ -50,20 +60,24 @@ class binanceBot:
 		for change, time in zip(price_changes[-n:], times[-n:]):
 			self.manager.update(time, change)
 
-		self.portfolio = account.get_portfolio_weight(['USDT'] + QUOTES[1:] + CURRENCIES)
 
+		self.returns = price_changes
+		self.update_times = times
+		self.portfolio = self.account.get_portfolio_weighted(['USDT'] + QUOTES + CURRENCIES)
 		self.manager.portfolio = self.portfolio
-
-
-		self.prices.append([np.array(market.prices([currency + RISKLESS for currency in CURRENCIES + QUOTES]))])
+		self.prices.append(np.array([1] + [np.mean(market.prices([a + 'USDT' for a in QUOTES + CURRENCIES])[b + 'USDT']) for b in QUOTES + CURRENCIES]))
 
 	def save(self, location):
 		with open(location, 'wb') as file:
 			pickle.dump(self, file)
 
-	def update(prices):
-		self.prices.append(prices)
-		self.returns.append(prices[-1] / prices[-2])
+	def update(self):
+		self.prices.append(np.array([1] + [np.mean(market.prices([a + 'USDT' for a in QUOTES + CURRENCIES])[b + 'USDT']) for b in QUOTES + CURRENCIES]))
+		self.returns.append(self.prices[-1] / self.prices[-2])
+		self.update_times.append(int(datetime.datetime.now().timestamp() * 1000))
+		self.manager.update(self.update_times[-1], self.returns[-1])
+
+		print(self.manager.portfolio)
 
 
 
@@ -74,47 +88,16 @@ class binanceBot:
 
 def main():
 
-	binanceBot()
-	return
 
-	#load wallet and get balances
 	try:
 		import keys
 	except ModuleNotFoundError:
 		print('keys.py file missing - see readme for set up instructions')
 		return 
-	wallet = account(keys.API, keys.SECRET)
-	print(wallet.balances)
 
-	#get current prices
-	
-	#price array
-
-
-
-	try:
-		with open(MAMR_MGR, 'rb') as file:
-			MAMR_Manager = pickle.load(file)
-	except:
-		MAMR_Manager = MAMRPortfolioManager(len(CURRENCIES) + len(QUOTES) + 1, 8.6, 800, 100, 0.001, 12)
-
-		MAMR_Manager.update()
-
-
-	MAMR_Manager.update(0,[1] * (len(CURRENCIES) + len(QUOTES) + 1))
-
-	with open(MAMR_MGR, 'wb') as file:
-		pickle.dump(MAMR_Manager, file)
-
-	#calculate portfolio weights
-
-
-	#calculate next portfolio
-
-	#calculate trade
-
-	#execute trade
-
+	bot = binanceBot(keys.API, keys.SECRET, 'state.pkl')
+	bot.update()
+	bot.save('state.pkl')
 
 if __name__ == '__main__':
 	main()
