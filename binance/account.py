@@ -7,6 +7,22 @@ class account:
 		self.api_key, self.secret_key = api_key, secret_key
 		self.get_account_balance()
 
+		self.market_filters = {}
+
+		self.exchange_info = json.loads(requests.get('https://api.binance.com/api/v3/exchangeInfo').text)
+		for symbol in self.exchange_info['symbols']:
+			self.market_filters[symbol['symbol']] = {}
+
+			for filter in symbol['filters']:
+				if filter['filterType'] == 'LOT_SIZE':
+					self.market_filters[symbol['symbol']]['min_order'] = float(filter['minQty'])
+					self.market_filters[symbol['symbol']]['precision_standard'] = int(np.log10(float(filter['stepSize'])))
+				if filter['filterType'] == 'MIN_NOTIONAL':
+					self.market_filters[symbol['symbol']]['precision_quote'] = int(np.log10(float(filter['minNotional'])))
+
+
+
+
 
 	def generate_signature(self, params):
 		return hmac.new(self.secret_key.encode('utf-8'), urllib.parse.urlencode(params).encode('utf-8'), hashlib.sha256).hexdigest()
@@ -46,6 +62,15 @@ class account:
 	def market(self, currency, quote, side, quote_volume=False, volume=None):
 		ts = int(datetime.datetime.now().timestamp() * 1000)
 
+		precision = self.market_filters[currency + quote]['precision_standard']
+		precision_quote = self.market_filters[currency + quote]['precision_quote']
+
+		form = "{:."+ str(-precision) + "f}"
+		form_quote = "{:."+ str(-precision_quote) + "f}" if precision_quote < 0 else "{:" + str(precision_quote) + "}"
+
+
+		vol = 0
+
 		if volume is not None and volume == 0.0:
 			return
 
@@ -66,31 +91,39 @@ class account:
 			if side == 'SELL':
 				volume = self.balances[currency]
 				if volume == 0:
-					return
-				params['quantity'] = np.abs(volume)
+					return 0
+				params['quantity'] = form.format(np.abs(volume))
+				vol = params['quantity']
 				#execute trade
 			elif side == 'BUY':
 				quote_volume = self.balances[quote]
 				if quote_volume == 0:
-					return
+					return 0
 
-				params['quoteOrderQty'] = np.abs(quote_volume)
+				params['quoteOrderQty'] = form_quote.format(np.abs(quote_volume))
+				vol = params['quoteOrderQty']
 
 				#execute trade
 		else:
 			if quote_volume:
-				params['quoteOrderQty'] = np.abs(volume)
+				params['quoteOrderQty'] = form_quote.format(np.abs(volume))
+				vol = params['quoteOrderQty']
 			else:
-				params['quantity'] = np.abs(volume)
+				params['quantity'] = form.format(np.abs(volume))
+				vol = params['quantity']
 
 		signature = self.generate_signature(params)
 		params['signature'] = signature
 
-		print(params)
 
-		r = requests.post('https://api.binance.com/api/v3/order/test', params=params, headers=headers)
-		print(r)
-		print(r.text)
+		if float(vol) == 0:
+			return 0
+		req = requests.post('https://api.binance.com/api/v3/order', params=params, headers=headers)
+		if req.status_code == 200:
+			return float(vol)
+		else:
+			print(r.text)
+			return 0
 
 	def limit_order(market, amount, price):
 		pass

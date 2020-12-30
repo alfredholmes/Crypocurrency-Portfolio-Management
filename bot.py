@@ -35,10 +35,8 @@ class binanceBot:
 					self.returns = loaded.returns
 					self.update_times = loaded.update_times
 					self.portfolio = np.array(loaded.portfolio)
-
-					#self.usd_balances = np.array([1] + [np.mean(market.prices([a + 'USDT' for a in QUOTES + CURRENCIES])[b + 'USDT']) for b in QUOTES + CURRENCIES]) * self.balances
-
 					return
+
 			except FileNotFoundError:
 				pass
 
@@ -112,31 +110,43 @@ class binanceBot:
 
 		#trade the quote assets to make up the deficits
 		for i, quote in enumerate(['USDT'] + QUOTES):
+			#ignore BNB
+
 			if trade[i] < 0:
+
 				#sell the asset
 				#find currency to sell to
-				for j, currency_2 in enumerate(['USDT'] + QUOTES + CURRENCIES):
+				for j, currency in enumerate(['USDT'] + QUOTES + CURRENCIES):
+					side = 'BUY'
+					quote_volume = False
+					if quote == 'BNB' and currency == 'BTC':
+						continue
+					if currency == 'USDT' and (quote == 'BTC' or quote == 'BNB'):
+						continue
+					if quote == 'BNB' and currency == 'ETH':
+						side = 'SELL'
+						quote_volume = True
+						currency = 'ETH'
+						quote = 'ETH'
+					
+
 					if trade[j] > 0 and -trade[i] < trade[j]:
-						print('Trade: ' + currency_2 + quote + ' liquidate')
-						self.account.market(currency_2, quote, 'BUY')
-						trade[i] = 0
+						print('Trade: ' + currency + quote + ' liquidate')
+						traded = self.account.market(currency, quote, side)
+						if traded > 0:
+							trade[i] += traded * self.prices[-1][i]
+							trade[j] -= traded * self.prices[-1][i]
 						break
 					elif trade[j] > 0:
 						print('Trade: ' + currency + quote, trade[j] / self.prices[-1][j])
-						self.account.market(currency_2, quote, 'BUY', False, trade[j] / self.prices[-1][j])
-						trade[i] += trade[j]
-						trade[j] = 0
+						traded = self.account.market(currency, quote, side, quote_volume, trade[j] / self.prices[-1][j])
+						if traded > 0:	
+							trade[i] += traded * self.prices[-1][j]
+							trade[j] -= traded * self.prices[-1][j]
 
 
-
-
-		#Calculate quote sells
-
-		#Work through trades, first from USDT and BTC to CURRENCIES, then sell remaining BNB after checking balance to avoid overspending
-
-
-
-
+		self.portfolio = self.account.get_portfolio_weighted(['USDT'] + QUOTES + CURRENCIES)
+		print(self.portfolio, self.manager.portfolio)
 
 def main():
 
