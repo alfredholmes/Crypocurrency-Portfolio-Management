@@ -122,7 +122,7 @@ class account:
 		if req.status_code == 200:
 			return float(vol)
 		else:
-			print(r.text)
+			print(req.text)
 			return 0
 
 	def limit_order(market, amount, price):

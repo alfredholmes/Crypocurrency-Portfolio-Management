@@ -151,8 +151,13 @@ class binanceBot:
 
 
 		self.portfolio = self.account.get_portfolio_weighted(['USDT'] + QUOTES + CURRENCIES)
-		self.manager.portfolio = np.array(self.portfolio)
 		print(self.portfolio, self.manager.portfolio)
+		
+		with open('output.txt', 'a') as file:
+			file.write(str(self.manager.portfolio) + str(self.portfolio))
+
+		self.manager.portfolio = np.array(self.portfolio)
+
 
 def main():
 
