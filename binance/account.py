@@ -43,8 +43,54 @@ class account:
 
 
 
-	def market_order(market, amount):
-		pass
+	def market(self, currency, quote, side, quote_volume=False, volume=None):
+		ts = int(datetime.datetime.now().timestamp() * 1000)
+
+		if volume is not None and volume == 0.0:
+			return
+
+		params = {
+			'timestamp': str(ts),
+			'symbol': currency + quote,
+			'type': 'MARKET',
+			'side': side
+		}
+
+		headers = {
+			"X-MBX-APIKEY": self.api_key
+		}
+
+		market = currency + quote
+		if volume is None:
+			#execute maximum trade
+			if side == 'SELL':
+				volume = self.balances[currency]
+				if volume == 0:
+					return
+				params['quantity'] = np.abs(volume)
+				#execute trade
+			elif side == 'BUY':
+				quote_volume = self.balances[quote]
+				if quote_volume == 0:
+					return
+
+				params['quoteOrderQty'] = np.abs(quote_volume)
+
+				#execute trade
+		else:
+			if quote_volume:
+				params['quoteOrderQty'] = np.abs(volume)
+			else:
+				params['quantity'] = np.abs(volume)
+
+		signature = self.generate_signature(params)
+		params['signature'] = signature
+
+		print(params)
+
+		r = requests.post('https://api.binance.com/api/v3/order/test', params=params, headers=headers)
+		print(r)
+		print(r.text)
 
 	def limit_order(market, amount, price):
 		pass

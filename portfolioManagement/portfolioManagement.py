@@ -30,7 +30,6 @@ class portfolioManager:
 		self.value += profit
 
 
-
 		if np.sum(np.abs(self.portfolio)) > 0:
 			interest_cost = self.portfolio * interest
 			self.value -= np.sum(interest_cost) * self.value

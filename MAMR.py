@@ -23,7 +23,7 @@ def main():
 			continue
 		else:
 			price_changes.append(prices[-1] / prices[-2])
-			price_changes[-1][0] = 1.05 ** (1 / 365)
+			price_changes[-1][0] = 1.05 ** (0.5 / 365)
 			times.append(candle['open_time'])
 
 	#manager = MAMRPortfolioManager(len(CURRENCIES) + 1, 11.75, 371, 995, 0.001, 23)
