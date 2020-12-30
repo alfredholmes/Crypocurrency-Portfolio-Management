@@ -123,10 +123,12 @@ class binanceBot:
 						continue
 					if currency == 'USDT' and (quote == 'BTC' or quote == 'BNB'):
 						continue
+					
+
 					if quote == 'BNB' and currency == 'ETH':
 						side = 'SELL'
 						quote_volume = True
-						currency = 'ETH'
+						currency = 'BNB'
 						quote = 'ETH'
 					
 
@@ -144,8 +146,12 @@ class binanceBot:
 							trade[i] += traded * self.prices[-1][j]
 							trade[j] -= traded * self.prices[-1][j]
 
+					if quote == 'ETH':
+						quote = 'BNB'
+
 
 		self.portfolio = self.account.get_portfolio_weighted(['USDT'] + QUOTES + CURRENCIES)
+		self.manager.portfolio = np.array(self.portfolio)
 		print(self.portfolio, self.manager.portfolio)
 
 def main():
