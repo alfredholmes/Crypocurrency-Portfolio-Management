@@ -15,9 +15,7 @@ class account:
 
 			self.market_filters[symbol['symbol']]['precision'] = int(symbol['baseAssetPrecision'])
 			self.market_filters[symbol['symbol']]['precision_quote'] = int(symbol['quoteAssetPrecision'])
-			
-			#self.market_filters[symbol['symbol']]['precision_quote'] = 2
-			#self.market_filters[symbol['symbol']]['precision'] = 2
+
 
 
 			for filter in symbol['filters']:
@@ -59,7 +57,8 @@ class account:
 
 	def get_portfolio_weighted(self, assets):
 		self.get_account_balance()
-		prices = np.array([1] + [np.mean(market.prices([a + 'USDT' for a in assets[1:]])[b + 'USDT']) for b in assets[1:]])
+		market_prices = market.prices([a + 'USDT' for a in assets[1:]])
+		prices = np.array([1] + [np.mean(market_prices[b + 'USDT']) for b in assets[1:]])
 		account = np.array([self.balances[a] if a in self.balances else 0.0 for a in assets])
 
 		return account * np.array(prices) / np.sum(account * np.array(prices))
@@ -147,7 +146,7 @@ class account:
 
 		if float(vol) == 0:
 			return 0
-		req = requests.post('https://api.binance.com/api/v3/order/test', params=params, headers=headers)
+		req = requests.post('https://api.binance.com/api/v3/order', params=params, headers=headers)
 		if req.status_code == 200:
 			return float(vol)
 		else:
@@ -157,13 +156,17 @@ class account:
 
 	def trade_to_portfolio(self, base, quotes, currencies, portfolio, prices=None):
 		if prices is None:
-			prices = np.array([1] + [np.mean(market.prices([a + base for a in quotes + currencies])[b + base]) for b in quotes + currencies])
+			market_prices = market.prices([a + base for a in quotes + currencies if a != base])
+			prices = np.array([1] + [np.mean(market_prices[b + base]) for b in quotes + currencies if b != base])
+
+		print(prices, quotes, currencies)
+		print(portfolio)
 
 		#normalise the portfolio
 		portfolio = np.abs(portfolio) / np.sum(portfolio)
 
 		#get the current portfolio
-		current_portfolio = np.array([self.balances[a] if a in self.balances else 0.0 for a in [base] + quotes + currencies])
+		current_portfolio = np.array([self.balances[a] if a in self.balances else 0.0 for a in quotes + currencies])
 		print(portfolio, np.sum(current_portfolio * prices))
 		
 		current_portfolio_weighted = current_portfolio * prices / np.sum(current_portfolio * prices)
@@ -176,7 +179,7 @@ class account:
 
 		print(trade_in_base, currency_sells)
 
-		for i, (currency, base_volume) in enumerate(zip([base] + quotes + currencies, currency_sells)):
+		for i, (currency, base_volume) in enumerate(zip(quotes + currencies, currency_sells)):
 			if base_volume >= 0:
 				continue
 
@@ -194,10 +197,10 @@ class account:
 			trade_in_base[0] += base_volume
 
 		#now sell from the quotes to the deficit currencies
-		for i, quote in enumerate([base] + quotes):
+		for i, quote in enumerate(quotes):
 			#see if the trade is less than 0 and then sell 
 			if trade_in_base[i] < 0:
-				for j, currency in enumerate([base] + quotes + currencies):
+				for j, currency in enumerate(quotes + currencies):
 					#see if we need to buy the currency 
 					if trade_in_base[j] > 0:
 						#test whether we can buy all of the asset with the current quote asset, otherwise liquidate quote into currency

@@ -10,11 +10,14 @@ def price(symbol):
 	return request['bids'][0][0], request['asks'][0][0]
 
 def prices(symbols):
+	print(symbols)
 	request = json.loads(requests.get('https://api.binance.com/api/v3/ticker/bookTicker').text)
 	data = {}
+
 	for book in request:
 		if book['symbol'] in symbols:
 			data[book['symbol']] = [float(book['bidPrice']), float(book['askPrice'])]
-		if book['symbol'][-3:] + book['symbol'][:3] in symbols:
-			data[book['symbol'][-3:] + book['symbol'][:3]] = [1 / float(book['askPrice']), 1 / float(book['bidPrice'])]
+
+		if book['symbol'][-(len(book['symbol']) - 3):] + book['symbol'][:3] in symbols:
+			data[book['symbol'][-(len(book['symbol']) - 3):] + book['symbol'][:3]] = [1 / float(book['askPrice']), 1 / float(book['bidPrice'])]
 	return data

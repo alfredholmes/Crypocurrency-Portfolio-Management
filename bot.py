@@ -78,76 +78,24 @@ class binanceBot:
 			pickle.dump(self, file)
 
 	def update(self):
-		self.prices.append(np.array([1.05 ** (0.5 / 365)] + [np.mean(market.prices([a + 'USDT' for a in QUOTES + CURRENCIES])[b + 'USDT']) for b in QUOTES + CURRENCIES]))
+		market_prices =market.prices([a + 'USDT' for a in QUOTES + CURRENCIES])
+		self.prices.append(np.array([1.05 ** (0.5 / 365)] + [np.mean(market_prices[b + 'USDT']) for b in QUOTES + CURRENCIES]))
 		self.returns.append(self.prices[-1] / self.prices[-2])
 		self.update_times.append(int(datetime.datetime.now().timestamp() * 1000))
 		usd_balances = self.balances * self.prices[-1]
 
 		self.manager.update(self.update_times[-1], self.returns[-1])
-		target_portfolio_usd = self.manager.portfolio * np.sum(usd_balances)
 
-		trade = target_portfolio_usd - usd_balances
-
-		buys = np.max([trade, np.zeros(trade.size)], axis=0)
-		sells = np.min([trade, np.zeros(trade.size)], axis=0)
 		
-		#Trade negative non quote assets to BNB
-		currency_sells = np.zeros(sells.size)
-		currency_sells[-len(CURRENCIES):] = sells[-len(CURRENCIES):]
+		target_portfolio = np.array(self.manager.portfolio)
+		#swutch bnb abd usdt to get fee reductions
+		usdt_proportion = target_portfolio[0]
+		target_portfolio[0] = target_portfolio[1]
+		target_portfolio[1] = usdt_proportion
+		#get the prices in BNB, maybe should just get these originally... might be some arbitrage, or 
 
-		#calculate volume to sell
-		currency_sell_volume = -currency_sells / self.prices[-1]
-		buy_volume = buys / self.prices[-1]
-		#execute trade to BNB
-		for i, (currency, volume) in enumerate(zip(['USDT'] + QUOTES + CURRENCIES, currency_sell_volume)):
-			if volume == 0:
-				continue
-			print('Trade: ' + currency + 'BNB\t ', volume)
-			self.account.market(currency, 'BNB', 'SELL', False, volume)
-
-			trade[i] = 0.0
-
-
-		#trade the quote assets to make up the deficits
-		for i, quote in enumerate(['USDT'] + QUOTES):
-			#ignore BNB
-
-			if trade[i] < 0:
-
-				#sell the asset
-				#find currency to sell to
-				for j, currency in enumerate(['USDT'] + QUOTES + CURRENCIES):
-					side = 'BUY'
-					quote_volume = False
-					if quote == 'BNB' and currency == 'BTC':
-						continue
-					if currency == 'USDT' and (quote == 'BTC' or quote == 'BNB'):
-						continue
-					
-
-					if quote == 'BNB' and currency == 'ETH':
-						side = 'SELL'
-						quote_volume = True
-						currency = 'BNB'
-						quote = 'ETH'
-					
-
-					if trade[j] > 0 and -trade[i] < trade[j]:
-						print('Trade: ' + currency + quote + ' liquidate')
-						traded = self.account.market(currency, quote, side)
-						if traded > 0:
-							trade[i] += traded * self.prices[-1][i]
-							trade[j] -= traded * self.prices[-1][i]
-						break
-					elif trade[j] > 0:
-						print('Trade: ' + currency + quote, trade[j] / self.prices[-1][j])
-						traded = self.account.market(currency, quote, side, quote_volume, trade[j] / self.prices[-1][j])
-						if traded > 0:	
-							trade[i] += traded * self.prices[-1][j]
-							trade[j] -= traded * self.prices[-1][j]
-
-					if quote == 'ETH':
-						quote = 'BNB'
+		
+		self.account.trade_to_portfolio('BNB', ['BNB', 'USDT'] + QUOTES[:-1], CURRENCIES, target_portfolio)
 
 
 		self.portfolio = self.account.get_portfolio_weighted(['USDT'] + QUOTES + CURRENCIES)
@@ -169,10 +117,9 @@ def main():
 		return 
 
 	bot = binanceBot(keys.API, keys.SECRET, 'state.pkl')
-	bot.account.trade_to_portfolio('USDT', QUOTES, CURRENCIES, [1] * (1 + len(QUOTES + CURRENCIES)))
-
-	#bot.update()
-	#bot.save('state.pkl')
+	
+	bot.update()
+	bot.save('state.pkl')
 
 if __name__ == '__main__':
 	main()
