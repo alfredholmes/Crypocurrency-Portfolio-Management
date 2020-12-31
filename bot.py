@@ -90,12 +90,11 @@ class binanceBot:
 		target_portfolio = np.array(self.manager.portfolio)
 		#swutch bnb abd usdt to get fee reductions
 		usdt_proportion = target_portfolio[0]
-		target_portfolio[0] = target_portfolio[1]
-		target_portfolio[1] = usdt_proportion
-		#get the prices in BNB, maybe should just get these originally... might be some arbitrage, or 
+		target_portfolio[0] = target_portfolio[2]
+		target_portfolio[2] = usdt_proportion
+		#The prices in BNB will be aquired in the trade method, maybe should just get these originally... 
 
-		
-		self.account.trade_to_portfolio('BNB', ['BNB', 'USDT'] + QUOTES[:-1], CURRENCIES, target_portfolio)
+		self.account.trade_to_portfolio('BNB', ['BNB', 'BTC', 'USDT'], CURRENCIES, target_portfolio)
 
 
 		self.portfolio = self.account.get_portfolio_weighted(['USDT'] + QUOTES + CURRENCIES)
