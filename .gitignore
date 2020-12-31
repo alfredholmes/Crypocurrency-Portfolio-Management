@@ -3,6 +3,9 @@
 keys*
 *.pkl
 
+#ignore txt outputs
+*.txt
+
 #Ignoring CSVs and Database files which store trading data  
 *.csv
 *.db

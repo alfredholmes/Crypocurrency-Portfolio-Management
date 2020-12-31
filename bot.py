@@ -169,8 +169,10 @@ def main():
 		return 
 
 	bot = binanceBot(keys.API, keys.SECRET, 'state.pkl')
-	bot.update()
-	bot.save('state.pkl')
+	bot.account.trade_to_portfolio('USDT', QUOTES, CURRENCIES, [1] * (1 + len(QUOTES + CURRENCIES)))
+
+	#bot.update()
+	#bot.save('state.pkl')
 
 if __name__ == '__main__':
 	main()

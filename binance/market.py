@@ -15,5 +15,6 @@ def prices(symbols):
 	for book in request:
 		if book['symbol'] in symbols:
 			data[book['symbol']] = [float(book['bidPrice']), float(book['askPrice'])]
-
+		if book['symbol'][-3:] + book['symbol'][:3] in symbols:
+			data[book['symbol'][-3:] + book['symbol'][:3]] = [1 / float(book['askPrice']), 1 / float(book['bidPrice'])]
 	return data
