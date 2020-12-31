@@ -1,12 +1,18 @@
 # Automated Portfolio Management and Algorithm Analysis for Binance Cryptocurrency Exchange
 Implementation of PAMR and MAMR portfolio management algorithms for online portfolio management and analysis of cryptocurrency assets.
 
-### MAMR 12 hour - 0.1% Trading Fee
+### Bot
+Current implementation of the bot assumes that the script `bot.py` will be run every 12 hours. On each run the MAMR algorithm is run and trades are executed on the tracked currencies on the binance spot exchange in a fee efficient way. The bot only sees the currencies that are tracked. To avoid trading assets held in the binance account the assets should either be put in savings or traded into assets that are not tracked - for example storing BTC in WBTC.
+
+### MAMR and PAMR Simulations
+The scripts `MAMR.py` and `PAMR.py` simulate the returns that the portfolio selection algorithms would have achived had the algorithm been running. We see that MAMR outperforms PAMR in general, although parameter fitting has only been done by eye - no system has been implemented (yet). 
+
+#### MAMR 12 hour - 0.1% Trading Fee
 ![MAMR 12 hour](https://raw.githubusercontent.com/alfredholmes/BinancePAMR/master/results/Figure_0.png)
-#### Example Portfolio Through Time
+##### Example Portfolio Through Time
 ![Portfolio through time](https://raw.githubusercontent.com/alfredholmes/BinancePAMR/master/results/example_portfolio.png)
 
-### PAMR 30 minute Performance - with the trading fee of 0.1%
+#### PAMR 30 minute Performance - with the trading fee of 0.1%
 Parameters fitted to maximise the mean daily return, algorithm runs every 30 minutes
 ![PAMR-2 Performance](https://raw.githubusercontent.com/alfredholmes/BinancePAMR/master/results/PAMR-BTC-comparison.png)
 
@@ -15,16 +21,20 @@ Parameters fitted to maximise the mean daily return, algorithm runs every 30 min
 	pip3 install requests numpy scipy  
 
 ### Binance Trading Bot
-Create a file keys.py and assign the api key and secret key from a binance account to the variables api and secret respectively in the keys file. When the bot runs it gets the spot portfolio of the tracked currencies (currencies in the CURRENCIES variable) and runs the MAMR algorithm to calculate the next portfolio and then makes the trade (not currently implemented) in a way that minimises the trade volume to reduce fees. The state, along with the market data is then pickled and is opened on the next run. The parameters in the implementation expect the script to be run every 12 hours. 
+Create a file `keys.py` and assign the api key and secret key from a binance account to the variables `api` and `secret` respectively in the `keys.py` file. When the bot runs it gets the spot portfolio of the tracked currencies (currencies in the CURRENCIES variable) and runs the MAMR algorithm to calculate the next portfolio and then makes the trade in a way that minimises the trade volume to reduce fees. The state, along with the market data is then pickled and is opened on the next run. The parameters in the implementation expect the script to be run every 12 hours. 
 
 ### To run PAMR/MAMR simulations
-	git clone https://github.com/alfredholmes/binancePAMR.git
-	cd binancePAMR
+	git clone https://github.com/alfredholmes/Binance-Portfolio-Management.git
+	cd Binance-Portfolio-Management
 	python3 data/get_candles_spot.py 
 	python3 PAMR.py
 	python3 MAMR.py
 
 In general MAMR outperforms PAMR for cryptocurrency portfolios.
+
+### To-do
+- Better recording of trades and portfolio values through time
+- General efficiencies to improve the number of requests sent
 
 ### References / useful papers
 #### Passive aggressive mean reversion 

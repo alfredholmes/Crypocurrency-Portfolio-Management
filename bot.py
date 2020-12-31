@@ -92,8 +92,8 @@ class binanceBot:
 		usdt_proportion = target_portfolio[0]
 		target_portfolio[0] = target_portfolio[2]
 		target_portfolio[2] = usdt_proportion
+		
 		#The prices in BNB will be aquired in the trade method, maybe should just get these originally... 
-
 		self.account.trade_to_portfolio('BNB', ['BNB', 'BTC', 'USDT'], CURRENCIES, target_portfolio)
 
 
@@ -102,7 +102,7 @@ class binanceBot:
 		
 		with open('output.txt', 'a') as file:
 			file.write(str(self.manager.portfolio) + str(self.portfolio))
-		
+
 
 def main():
 
