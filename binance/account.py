@@ -148,6 +148,7 @@ class account:
 			return 0
 		req = requests.post('https://api.binance.com/api/v3/order', params=params, headers=headers)
 		if req.status_code == 200:
+			self.get_account_balance()
 			return float(vol)
 		else:
 			print(req.text, currency + quote, params)
