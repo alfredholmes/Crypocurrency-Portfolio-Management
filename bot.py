@@ -102,9 +102,7 @@ class binanceBot:
 		
 		with open('output.txt', 'a') as file:
 			file.write(str(self.manager.portfolio) + str(self.portfolio))
-
-		self.manager.portfolio = np.array(self.portfolio)
-
+		
 
 def main():
 
