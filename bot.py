@@ -79,8 +79,12 @@ class binanceBot:
 
 	def update(self):
 		market_prices =market.prices([a + 'USDT' for a in QUOTES + CURRENCIES])
-		self.prices.append(np.array([1.05 ** (0.5 / 365)] + [np.mean(market_prices[b + 'USDT']) for b in QUOTES + CURRENCIES]))
-		self.returns.append(self.prices[-1] / self.prices[-2])
+		#self.prices.append(np.array([1.05 ** (0.5 / 365)] + [np.mean(market_prices[b + 'USDT']) for b in QUOTES + CURRENCIES]))
+		self.prices.append(np.array([1] + [np.mean(market_prices[b + 'USDT']) for b in QUOTES + CURRENCIES]))
+		returns = self.prices[-1] / self.prices[-2]
+		returns[0] = 1.05 ** (0.5 / 365) #should get realtime returns
+
+		self.returns.append(returns)
 		self.update_times.append(int(datetime.datetime.now().timestamp() * 1000))
 		usd_balances = self.balances * self.prices[-1]
 
