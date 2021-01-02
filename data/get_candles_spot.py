@@ -11,7 +11,7 @@ import requests, json, sqlite3, datetime
 #MARKETS = ['BTCUSDT', 'ETHBTC', 'BNBBTC', 'EOSBTC']
 #MARKETS = ['BTCUSDT', 'ETHBTC', 'EOSBTC', 'LTCBTC', 'BNBBTC', 'XRPBTC', 'BCHBTC', 'ADABTC', 'XMRBTC', 'FTTBTC']
 MARKETS = ['BTCUSDT', 'ETHUSDT', 'EOSUSDT', 'LTCUSDT', 'BNBUSDT', 'XRPUSDT', 'BCHUSDT', 'ADAUSDT', 'XMRUSDT', 'FTTUSDT']
-START_DATE = datetime.datetime(year=2020, month=12, day=15)
+START_DATE = datetime.datetime(year=2020, month=1, day=1)
 N = 1
 INTERVAL = '12h'
 INTERVALS = {

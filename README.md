@@ -35,7 +35,8 @@ In general MAMR outperforms PAMR for cryptocurrency portfolios.
 ### To-do
 - Better recording of trades and portfolio values through time
 - General efficiencies to improve the number of requests sent
-- Store portfolio in flexible savings if available savings
+- Store portfolio in flexible savings if availabl
+- Fix simulation logic to trade in the same way that the bot does
 
 ### References / useful papers
 #### Passive aggressive mean reversion 
