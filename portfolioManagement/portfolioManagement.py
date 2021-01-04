@@ -148,6 +148,7 @@ class MAMRPortfolioManager(portfolioManager):
 
 	def calculate_next_portfolio(self):
 		price_changes = np.array(self.price_changes[-1])
+		#Note that here we don't quite follow Peng et al. and instead use the moving average of the returns rather than the returns relative to the current price
 		self.ma = np.mean(self.price_changes[-self.omega:], axis=0)
 		x_bar = np.mean(self.ma)
 
