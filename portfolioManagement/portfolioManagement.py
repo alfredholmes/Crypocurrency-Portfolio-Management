@@ -148,13 +148,11 @@ class MAMRPortfolioManager(portfolioManager):
 
 	def calculate_next_portfolio(self):
 		price_changes = np.array(self.price_changes[-1])
-		#Note that here we don't quite follow Peng et al. and instead use the moving average of the returns rather than the returns relative to the current price
-		self.ma = np.mean(self.price_changes[-self.omega:], axis=0)
+		self.ma = np.mean(self.prices[-self.omega:], axis=0) / self.prices[0]
 		x_bar = np.mean(self.ma)
 
 
 		alpha = 0 if np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2) == 0 else self.loss(self.portfolio, self.ma) / np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2)
-		#print(self.loss(self.ma) / np.sum((self.ma - x_bar * np.ones(self.ma.size)) ** 2))
 		new_weights = self.portfolio + alpha * (self.ma - x_bar * np.ones(self.ma.size))
 		new_weights = self.normalise(new_weights)
 		
