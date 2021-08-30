@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 #need to run data/get_candles_spot.py
-DATABASE = 'data/candles_12h.db'
+DATABASE = 'data/candles_15m.db'
 CURRENCIES = ['BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'XRP', 'BCH', 'ADA', 'XMR']
 #CURRENCIES = ['BTC', 'ETH', 'EOS', 'LTC', 'BNB', 'BCH', 'ADA']
 
