@@ -2,6 +2,23 @@ import numpy as np
 from scipy.optimize import minimize
 
 
+def project_onto_simplex(v):
+	'''Fast projection onto the unit simplex, see https://jp.mathworks.com/matlabcentral/fileexchange/30332-projection-onto-simplex'''
+	m = v.size
+	s = np.sort(v)[::-1]
+	
+	temp_sum = 0	
+	for i in range(m - 1):
+		temp_sum += s[i]
+		t_max = (temp_sum - 1) / (i + 1)
+		if t_max > s[i + 1]:
+			break
+	else:
+		t_max = (temp_sum + s[-1] - 1) / m
+	
+	print(t_max)
+
+	return np.max([v - t_max, np.zeros(m)], axis=0)
 
 class portfolioManager:
 	#n number of assets available for investment, assets is an array  of names for each available assets
@@ -18,6 +35,7 @@ class portfolioManager:
 		self.prices = [np.ones(n)]
 		self.price_changes = []
 		self.update_times = []
+		self.returns = []
 
 	#function to update the portfolio, interest is the interest to be paid for holding borrowed assets in futures markets for example
 	def update(self, time, price_changes, interest=0):
@@ -27,6 +45,7 @@ class portfolioManager:
 		self.prices.append(self.prices[-1] * price_changes)
 		
 		profit = (np.sum(np.array(price_changes) * self.portfolio) - np.sum(self.portfolio)) * self.value
+		self.returns.append(profit / self.value)
 		self.value += profit
 
 
@@ -104,17 +123,17 @@ class portfolioManager:
 
 		
 		
-		result = minimize(
-							lambda x: np.sum((x - new_weights) ** 2), 
-							np.array(new_weights), 
-							jac=lambda x: 2 * (x - new_weights), 
-							bounds = [(0, np.infty) for _ in new_weights], 
-							constraints=[{'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1}]
-						)
-		minimum = result.x
+		#result = minimize(
+		#					lambda x: np.sum((x - new_weights) ** 2), 
+		#					np.array(new_weights), 
+		#					jac=lambda x: 2 * (x - new_weights), 
+		#					bounds = [(0, np.infty) for _ in new_weights], 
+		#					constraints=[{'type': 'eq', 'fun': lambda x: np.sum(np.abs(x)) - 1}]
+		#				)
+		#minimum = result.x
 		
-
-
+		minimum = project_onto_simplex(new_weights)
+		#print(minimum)
 
 		#return np.max([new_weights, np.zeros(new_weights.size)], axis=0) / np.sum(np.max([new_weights, np.zeros(new_weights.size)], axis=0))
 		return minimum / np.sum(np.abs(minimum))
