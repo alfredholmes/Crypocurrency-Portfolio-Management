@@ -16,7 +16,6 @@ def project_onto_simplex(v):
 	else:
 		t_max = (temp_sum + s[-1] - 1) / m
 	
-	print(t_max)
 
 	return np.max([v - t_max, np.zeros(m)], axis=0)
 
