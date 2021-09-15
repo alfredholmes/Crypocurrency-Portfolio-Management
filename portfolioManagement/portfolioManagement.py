@@ -43,6 +43,8 @@ class portfolioManager:
 		self.price_changes.append(price_changes)
 		self.prices.append(self.prices[-1] * price_changes)
 		
+		
+		
 		profit = (np.sum(np.array(price_changes) * self.portfolio) - np.sum(self.portfolio)) * self.value
 		self.returns.append(profit / self.value)
 		self.value += profit
@@ -175,7 +177,10 @@ class MAMRPortfolioManager(portfolioManager):
 		new_weights = self.normalise(new_weights)
 		
 		return new_weights
-
+	def update(self, time, price_changes):
+		super().update(time, price_changes)
+		self.prices = self.prices[-self.omega:]
+		self.price_changes = self.price_changes[-self.omega:]
 
 	def loss(self, b, x):
 

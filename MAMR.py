@@ -26,7 +26,7 @@ def main():
 			price_changes[-1][0] = 1.05 ** (0.5 / 365)
 			times.append(candle['open_time'])
 
-	manager = MAMRPortfolioManager(len(CURRENCIES) + 1, 10, 3, 10, 0.000, 26)
+	manager = MAMRPortfolioManager(len(CURRENCIES) + 1, 10, 3, 10, 0.1 / 100, 26)
 
 	for change, time in zip(price_changes, times):
 		manager.update(time, change)
