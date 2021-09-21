@@ -26,7 +26,7 @@ class portfolioManager:
 		self.portfolio = np.zeros(n)
 		
 		self.portfolio[0] = 1
-		self.portfolios = [self.portfolio]
+		#self.portfolios = [self.portfolio]
 		self.trading_fee = trading_fee
 		self.margin = 1
 		self.value = 1
@@ -66,10 +66,10 @@ class portfolioManager:
 		
 
 		#update data
-		self.values.append(self.value * self.fees(time))
+		#self.values.append(self.value * self.fees(time))
 		
 		
-		self.portfolios.append(np.array(self.portfolio))
+		#self.portfolios.append(np.array(self.portfolio))
 
 
 
