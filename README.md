@@ -1,8 +1,5 @@
-# Automated Portfolio Management and Algorithm Analysis for Binance Cryptocurrency Exchange
+# MAMR, OLMAR, and PAMR simulations for binance exchange
 Implementation of PAMR and MAMR portfolio management algorithms for online portfolio management and analysis of cryptocurrency assets.
-
-### Bot
-Current implementation of the bot assumes that the script `bot.py` will be run every 12 hours. On each run the MAMR algorithm is run and trades are executed on the tracked currencies on the binance spot exchange in a fee efficient way. The bot only sees the currencies that are tracked. To avoid trading assets held in the binance account the assets should either be put in savings or traded into assets that are not tracked - for example storing BTC in WBTC.
 
 ### MAMR and PAMR Simulations
 The scripts `MAMR.py` and `PAMR.py` simulate the returns that the portfolio selection algorithms would have achived had the algorithm been running. We see that MAMR outperforms PAMR in general, although parameter fitting has only been done by eye - no system has been implemented (yet). The MAMR implementation differes slightly from the paper by using a different moving average for the return prediction which empirically enjoys better results.
@@ -32,12 +29,6 @@ Create a file `keys.py` and assign the api key and secret key from a binance acc
 
 In general MAMR outperforms PAMR for cryptocurrency portfolios.
 
-### To-do
-- Refactor bot to be asynchronous so orders can be executed simultaneously and calculations use the most up to date prices
-- Better recording of trades and portfolio values through time
-- General efficiencies to improve the number of requests sent
-- Store portfolio in flexible savings if available
-- Fix simulation logic to trade in the same way that the bot does
 
 ### References / useful papers
 #### Passive aggressive mean reversion 
