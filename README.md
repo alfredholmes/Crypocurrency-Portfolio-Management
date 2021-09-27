@@ -17,8 +17,6 @@ Parameters fitted to maximise the mean daily return, algorithm runs every 30 min
 ### Requirements
 	pip3 install requests numpy scipy  
 
-### Binance Trading Bot
-Create a file `keys.py` and assign the api key and secret key from a binance account to the variables `api` and `secret` respectively in the `keys.py` file. When the bot runs it gets the spot portfolio of the tracked currencies (currencies in the CURRENCIES variable) and runs the MAMR algorithm to calculate the next portfolio and then makes the trade in a way that minimises the trade volume to reduce fees. The state, along with the market data is then pickled and is opened on the next run. The parameters in the implementation expect the script to be run every 12 hours. 
 
 ### To run PAMR/MAMR simulations
 	git clone https://github.com/alfredholmes/Binance-Portfolio-Management.git
